@@ -1,3 +1,3 @@
 extern crate num;
 
-pub mod decimal32;
+pub mod decimal;
