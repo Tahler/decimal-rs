@@ -3,12 +3,6 @@ use std::cmp::{PartialEq};
 use super::super::num::{Num, Zero, One, Signed};
 use super::parse_decimal_error::ParseDecimalError;
 
-const ZERO: u32 = 0b0_00000_000000_00000000000000000000;
-const SIGN_MASK: u32 = 0b1_00000_000000_00000000000000000000;
-const COMBINATION_MASK: u32 = 0b0_11111_000000_00000000000000000000;
-const EXPONENT_MASK: u32 = 0b0_00000_111111_00000000000000000000;
-const COEFFICIENT_CONTINUATION_MASK: u32 = 0b0_00000_000000_11111111111111111111;
-
 #[derive(Debug, Clone, Copy)]
 pub struct Decimal32 {
     data: u32,
@@ -18,6 +12,48 @@ impl Decimal32 {
     /// Creates and initializes a Decimal32 representation of zero.
     pub fn new() -> Decimal32 {
         Decimal32::zero()
+    }
+
+    fn get_sign_field(&self) -> u32 {
+        let mask = 0b1_00000_000000_00000000000000000000;
+        (self.data & mask) >> 31
+    }
+    
+    fn get_combination_field(&self) -> u32 {
+        let mask = 0b0_11111_000000_00000000000000000000;
+        (self.data & mask) >> 26
+    }
+
+    fn get_first_two_bits_combination_field(&self) -> u32 {
+        let combination_field = self.get_combination_field();
+        combination_field >> 3
+    }
+    
+    fn get_second_two_bits_combination_field(&self) -> u32 {
+        let mask = 0b00110;
+        let combination_field = self.get_combination_field();
+        (combination_field & mask) >> 1
+    }
+    
+    fn get_normal_exponent(&self) -> u32 {
+        let mask: u32 = 0b0_00111_111000_00000000000000000000;
+        (self.data & mask) >> 23
+    }
+    
+    fn get_shifted_exponent(&self) -> u32 {
+        let mask: u32 = 0b0_00001_111110_00000000000000000000;
+        (self.data & mask) >> 21
+    }
+    
+    fn get_normal_significand(&self) -> u32 {
+        let mask = 0b0_00000_000111_11111111111111111111;
+        self.data & mask
+    }
+    
+    fn get_shifted_significand(&self) -> u32 {
+        let implicit_100 = 0b100_0_00000_00000_00000_00000;
+        let mask = 0b0_00000_000001_11111111111111111111;
+        implicit_100 + (self.data & mask)        
     }
 }
 
@@ -125,12 +161,12 @@ impl Signed for Decimal32 {
 
     /// Note: Zero can be positive or negative.    
     fn is_positive(&self) -> bool {
-        self.data & SIGN_MASK == 0
+        self.get_sign_field() == 0
     }
     
     /// Note: Zero can be positive or negative.
     fn is_negative(&self) -> bool {
-        self.data & ZERO != 0
+        self.get_sign_field() != 0
     }
 }
     
