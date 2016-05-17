@@ -16,6 +16,61 @@ impl Decimal32 {
     pub fn new() -> Decimal32 {
         Decimal32::zero()
     }
+    
+    /// Creates and initializes a Decimal32 representation of positive infinity.
+    pub fn infinity() -> Decimal32 {
+        Decimal32 {
+            data: 0b0_11110_000000_00000000000000000000
+        }
+    }
+    
+    /// Creates and initializes a Decimal32 representation of negative infinity.    
+    pub fn neg_infinity() -> Decimal32 {
+        Decimal32 {
+            data: 0b1_11110_000000_00000000000000000000
+        }
+    }
+    
+    /// Creates and initializes a Decimal32 that is specially encoded as a quiet NaN.
+    pub fn quiet_nan() -> Decimal32 {
+        Decimal32 {
+            data: 0b0_11111_000000_00000000000000000000      
+        }
+    }
+
+    /// Creates and initializes a Decimal32 that is specially encoded as a signaling NaN.
+    pub fn signaling_nan() -> Decimal32 {
+        Decimal32 {
+            data: 0b0_11111_100000_00000000000000000000      
+        }
+    }
+
+    /// Copies the data passed into the data in the Decimal32.
+    pub fn from_data(data: u32) -> Decimal32 {
+        Decimal32 { data: data }
+    }
+
+    /// Returns true if the combination field signifies infinity, and false otherwise.    
+    pub fn is_infinity(&self) -> bool {
+        self.get_combination_field() == 0b11110
+    }
+
+    /// Returns true if the combination field signifies infinity and the sign is positive, and false
+    /// otherwise.    
+    pub fn is_pos_infinity(&self) -> bool {
+        self.is_positive() && self.is_infinity()
+    }
+
+    /// Returns true if the combination field signifies infinity and the sign is negative, and false
+    /// otherwise.    
+    pub fn is_neg_infinity(&self) -> bool {
+        self.is_negative() && self.is_infinity()
+    }
+    
+    /// Returns true if the combination field signifies NaN, and false otherwise.    
+    pub fn is_nan(&self) -> bool {
+        self.get_combination_field() == 0b11111
+    }
 
     fn get_sign_field(&self) -> u32 {
         (self.data & SIGN_MASK) >> 31
@@ -62,7 +117,27 @@ impl Add<Decimal32> for Decimal32 {
     type Output = Decimal32;
 
     fn add(self, other: Decimal32) -> Decimal32 {
-        self // TODO
+        let sum;
+        let sign = self.get_sign_field();
+        if self.is_nan() || other.is_nan() {
+            sum = Decimal32::quiet_nan();
+        } else if self.is_infinity() {
+            if other.is_infinity() {
+                sum = Decimal32::infinity();
+            }
+        } else {
+            let exponent;
+            let significand;
+            if self.get_first_two_bits_combination_field() < 3 {
+                exponent = self.get_normal_exponent();
+                significand = self.get_normal_significand();
+            } else { // self.get_second_two_bits_combination_field() < 3
+                exponent = self.get_shifted_exponent();
+                significand = self.get_shifted_significand();
+            }
+            // TODO sum =...
+        }
+        sum
     }
 }
 
