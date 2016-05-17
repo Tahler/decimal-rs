@@ -6,6 +6,12 @@ use super::parse_decimal_error::ParseDecimalError;
 const SIGN_MASK: u32 = 0b1_00000_000000_00000000000000000000;
 const COMBINATION_MASK: u32 = 0b0_11111_000000_00000000000000000000;
 
+/// Represents a 32-bit decimal number according to the IEEE 754-2008 standard.
+///
+/// Decimal32 supports 7 decimal digits of significand and an exponent range of −95 to +96, i.e. 
+/// ±0.000000×10^−95 to ±9.999999×10^96. (Equivalently, ±0000000×10^−101 to ±9999999×10^90.) 
+///
+/// Read more [here](https://en.wikipedia.org/wiki/Decimal32_floating-point_format).
 #[derive(Debug, Clone, Copy)]
 pub struct Decimal32 {
     data: u32,
