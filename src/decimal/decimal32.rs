@@ -359,14 +359,19 @@ impl Signed for Decimal32 {
         *self
     }
 
+    /// Returns the sign of the decimal as a decimal.
+    ///
+    /// - 1.0 if the number is positive, +0.0 or INFINITY
+    /// - -1.0 if the number is negative, -0.0 or NEG_INFINITY
+    /// - NaN if the number is NaN
     fn signum(&self) -> Decimal32 {
-        // TODO
-        // Returns the sign of the number.
-        // For f32 and f64:
-        // 1.0 if the number is positive, +0.0 or INFINITY
-        // -1.0 if the number is negative, -0.0 or NEG_INFINITY
-        // NaN if the number is NaN
-        *self
+        if self.is_nan() {
+            self.clone()
+        } else if self.is_positive() {
+            Decimal32::one()
+        } else {
+            -Decimal32::one()
+        }
     }
 
     /// Note: Zero can be positive or negative.
