@@ -1,5 +1,6 @@
 use std::ops::{Add, Sub, Mul, Div, Neg, Rem};
 use std::cmp::PartialEq;
+use std::default::Default;
 use super::super::num::{Num, Zero, One, Signed};
 use super::parse_decimal_error::ParseDecimalError;
 
@@ -209,6 +210,12 @@ impl Decimal32 {
         let shifted_exponent = exponent + factor;
         let shifted_significand = ((significand as f64) * 10f64.powi(-factor)) as u32;
         Decimal32::from_data(sign, shifted_exponent, shifted_significand)
+    }
+}
+
+impl Default for Decimal32 {
+    fn default() -> Decimal32 {
+        Decimal32::zero()
     }
 }
 
