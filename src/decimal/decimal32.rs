@@ -9,8 +9,8 @@ const COMBINATION_MASK: u32 = 0b0_11111_000000_00000000000000000000;
 /// Represents a 32-bit decimal number according to the [IEEE 754-2008 standard]
 /// (https://en.wikipedia.org/wiki/Decimal32_floating-point_format).
 ///
-/// Decimal32 supports 7 decimal digits of significand and an exponent range of −95 to +96, i.e. 
-/// ±0.000000×10^−95 to ±9.999999×10^96. (Equivalently, ±0000000×10^−101 to ±9999999×10^90.) 
+/// Decimal32 supports 7 decimal digits of significand and an exponent range of −95 to +96, i.e.
+/// ±0.000000×10^−95 to ±9.999999×10^96. (Equivalently, ±0000000×10^−101 to ±9999999×10^90.)
 #[derive(Debug, Clone, Copy)]
 pub struct Decimal32 {
     data: u32,
@@ -22,7 +22,7 @@ impl Decimal32 {
         Decimal32::zero()
     }
 
-    /// Creates and initialize a Decimal32 from its significant parts: the sign, exponent, and 
+    /// Creates and initialize a Decimal32 from its significant parts: the sign, exponent, and
     /// significand, respectively.
     ///
     /// Returns Err(String) if either the exponent or significand is out of range.
@@ -39,7 +39,7 @@ impl Decimal32 {
         } else {
             let sign_field = (if is_negative { 1 } else { 0 }) << 31;
             let stored_exponent = (exponent + 101) as u32;
-            
+
             let implicit_field;
             let exponent_field;
             let significand_field;
@@ -54,7 +54,7 @@ impl Decimal32 {
                 // remove the implicit (100)
                 significand_field = significand - 0b1000_0000_0000_0000_0000_0000;
             }
-            let ok_result = Decimal32 { 
+            let ok_result = Decimal32 {
                 data: sign_field + implicit_field + exponent_field + significand_field
             };
             Ok(ok_result)
@@ -66,7 +66,7 @@ impl Decimal32 {
         Decimal32 { data: 0b0_11110_000000_00000000000000000000 }
     }
 
-    /// Creates and initializes a Decimal32 representation of negative infinity.    
+    /// Creates and initializes a Decimal32 representation of negative infinity.
     pub fn neg_infinity() -> Decimal32 {
         Decimal32 { data: 0b1_11110_000000_00000000000000000000 }
     }
@@ -96,51 +96,66 @@ impl Decimal32 {
         Decimal32 { data: data }
     }
 
-    /// Returns true if the combination field signifies infinity, and false otherwise.    
+    /// Returns true if the combination field signifies infinity, and false otherwise.
     pub fn is_infinity(&self) -> bool {
         self.get_combination_field() == 0b11110
     }
 
     /// Returns true if the combination field signifies infinity and the sign is positive, and false
-    /// otherwise.    
+    /// otherwise.
     pub fn is_pos_infinity(&self) -> bool {
         self.is_positive() && self.is_infinity()
     }
 
     /// Returns true if the combination field signifies infinity and the sign is negative, and false
-    /// otherwise.    
+    /// otherwise.
     pub fn is_neg_infinity(&self) -> bool {
         self.is_negative() && self.is_infinity()
     }
 
-    /// Returns true if the combination field signifies NaN, and false otherwise.    
+    /// Returns true if the combination field signifies NaN, and false otherwise.
     pub fn is_nan(&self) -> bool {
         self.get_combination_field() == 0b11111
     }
 
-    /// Returns the three defining pieces of the decimal - the sign (true if negative), the 
+    /// Returns the three defining pieces of the decimal - the sign (true if negative), the
     /// exponent, and the significand, respectively.
     ///
     /// Do not expect well-behaved results if this decimal is NaN or infinity.
     pub fn get_data(&self) -> (bool, i32, u32) {
+        // While it would be nice to make this method simply return (self.get_sign(),
+        // self.get_exponent(), and self.get_significand()), that would require two duplicate checks
+        // on the combination field.
         let sign = self.get_sign_field() != 0;
         let (exponent, significand) = if self.get_first_two_bits_combination_field() < 3 {
             ((self.get_normal_exponent() as i32) - 101, self.get_normal_significand())
-        } else {
-            // self.get_second_two_bits_combination_field() < 3
+        } else { // self.get_second_two_bits_combination_field() < 3
             ((self.get_shifted_exponent() as i32) - 101, self.get_shifted_significand())
         };
         (sign, exponent, significand)
     }
 
+    /// Returns this Decimal32's exponent value.
+    ///
+    /// Do not expect well-behaved results if this decimal is NaN or infinity.
     pub fn get_exponent(&self) -> i32 {
         let exponent = if self.get_first_two_bits_combination_field() < 3 {
             self.get_normal_exponent()
-        } else {
-            // self.get_second_two_bits_combination_field() < 3
+        } else { // self.get_second_two_bits_combination_field() < 3
             self.get_shifted_exponent()
         };
         (exponent as i32) - 101
+    }
+
+    /// Returns this Decimal32's significand value.
+    ///
+    /// Do not expect well-behaved results if this decimal is NaN or infinity.
+    pub fn get_significand(&self) -> u32 {
+        if self.get_first_two_bits_combination_field() < 3 {
+            self.get_normal_significand()
+        } else { // self.get_second_two_bits_combination_field() < 3
+            self.get_shifted_significand()
+        }
     }
 
     fn get_sign_field(&self) -> u32 {
@@ -251,7 +266,7 @@ impl Add<Decimal32> for Decimal32 {
                 exponent = self.get_shifted_exponent();
                 significand = self.get_shifted_significand();
             }
-            unimplemented!() // TODO 
+            unimplemented!() // TODO
         }
     }
 }
@@ -358,4 +373,3 @@ impl Signed for Decimal32 {
         self.get_sign_field() != 0
     }
 }
-    
