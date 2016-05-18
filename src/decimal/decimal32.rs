@@ -348,6 +348,8 @@ impl One for Decimal32 {
 }
 
 impl Signed for Decimal32 {
+    /// Returns the absolute value of this decimal, by returning a copy of this decimal with the
+    /// sign bit turned off.
     fn abs(&self) -> Decimal32 {
         Decimal32 { data: self.data & (!SIGN_MASK) }
     }
@@ -359,11 +361,11 @@ impl Signed for Decimal32 {
         *self
     }
 
-    /// Returns the sign of the decimal as a decimal.
+    /// Returns the sign of this decimal as a decimal.
     ///
-    /// - 1.0 if the number is positive, +0.0 or INFINITY
-    /// - -1.0 if the number is negative, -0.0 or NEG_INFINITY
-    /// - NaN if the number is NaN
+    /// - 1.0 if the decimal is positive, +0.0 or INFINITY.
+    /// - -1.0 if the decimal is negative, -0.0 or -INFINITY.
+    /// - NaN if the decimal is NaN.
     fn signum(&self) -> Decimal32 {
         if self.is_nan() {
             self.clone()
@@ -374,12 +376,15 @@ impl Signed for Decimal32 {
         }
     }
 
-    /// Note: Zero can be positive or negative.
+    /// Returns true if this decimal is positive, false otherwise.
+    ///
+    /// Note: Both zero and NaN can be positive or negative.
     fn is_positive(&self) -> bool {
         self.get_sign_field() == 0
     }
 
-    /// Note: Zero can be positive or negative.
+    /// Returns true if this decimal is negative, false otherwise.
+    /// Note: Both zero and NaN can be positive or negative.
     fn is_negative(&self) -> bool {
         self.get_sign_field() != 0
     }
