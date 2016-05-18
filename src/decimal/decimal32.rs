@@ -1,5 +1,6 @@
 use std::ops::{Add, Sub, Mul, Div, Neg, Rem};
 use std::cmp::PartialEq;
+use std::fmt;
 use std::default::Default;
 use super::super::num::{Num, Zero, One, Signed};
 use super::parse_decimal_error::ParseDecimalError;
@@ -216,6 +217,34 @@ impl Decimal32 {
 impl Default for Decimal32 {
     fn default() -> Decimal32 {
         Decimal32::zero()
+    }
+}
+
+impl fmt::Display for Decimal32 {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        let (is_negative, exponent, significand) = self.get_data();
+        let decimal_str = String::new();
+        let width = match formatter.width() {
+            Some(width) => width,
+            None => 0
+        };
+        let precision = match formatter.precision() {
+            Some(precision) => precision,
+            None => 0
+        };
+        unimplemented!()
+    }
+}
+
+impl fmt::LowerExp for Decimal32 {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        unimplemented!()
+    }
+}
+
+impl fmt::UpperExp for Decimal32 {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        unimplemented!()
     }
 }
 
