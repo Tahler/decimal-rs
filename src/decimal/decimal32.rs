@@ -198,11 +198,11 @@ impl Decimal32 {
         implicit_100 + (self.data & mask)
     }
 
-    fn shift_exponent(&self, factor: i32) -> Decimal32 {
-        let (_, exponent, significand) = self.get_data();
+    fn shift_exponent(&self, factor: i32) -> Result<Decimal32, String> {
+        let (sign, exponent, significand) = self.get_data();
         let shifted_exponent = exponent + factor;
-        let shifted_significand = (significand as f64) * 10f64.powi(-factor);
-        unimplemented!()
+        let shifted_significand = ((significand as f64) * 10f64.powi(-factor)) as u32;
+        Decimal32::from_data(sign, shifted_exponent, shifted_significand)
     }
 }
 
