@@ -518,6 +518,53 @@ mod test {
         let expected = -101;
         let actual = neg_101.get_exponent();
         assert_eq!(expected, actual);
+
+        let alternate = Decimal32 {
+            // 64 => 0b0100_0000
+            data: 0b0_11_01000000_000000000000000000000
+        };
+        let expected = -37;
+        let actual = alternate.get_exponent();
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn get_significand() {
+        let zero = Decimal32 {
+            data: 0b0_0000000_00000000000000000000000
+        };
+        let expected = 0;
+        let actual = zero.get_significand();
+        assert_eq!(expected, actual);
+
+        let one = Decimal32 {
+            data: 0b0_0000000_00000000000000000000001
+        };
+        let expected = 1;
+        let actual = one.get_significand();
+        assert_eq!(expected, actual);
+
+        let eighty = Decimal32 {
+            // 80 => 0b0101_0000
+            data: 0b0_00000000_00000000000000001010000
+        };
+        let expected = 80;
+        let actual = eighty.get_significand();
+        assert_eq!(expected, actual);
+
+        let first_24th_bit = Decimal32 {
+            data: 0b0_11_00000000_000000000000000000000
+        };
+        let expected = 8388608;
+        let actual = first_24th_bit.get_significand();
+        assert_eq!(expected, actual);
+
+        let max = Decimal32 {
+            data: 0b0_11_00000000_110001001011001111111
+        };
+        let expected = 9_999_999;
+        let actual = max.get_significand();
+        assert_eq!(expected, actual);
     }
 
     #[test]
