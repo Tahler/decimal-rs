@@ -101,7 +101,7 @@ impl Decimal32 {
         Decimal32 { data: 0b0_11111_100000_00000000000000000000 }
     }
 
-    /// Copies the data passed into the data in the Decimal32.
+    /// Returns a Decimal32 with the exact bits passed in through `data`.
     pub fn from_bin(data: u32) -> Decimal32 {
         Decimal32 { data: data }
     }
