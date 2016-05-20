@@ -3,3 +3,4 @@
 extern crate num;
 
 pub mod decimal;
+mod zero_pad;

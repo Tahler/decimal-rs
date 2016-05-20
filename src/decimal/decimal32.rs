@@ -222,19 +222,6 @@ impl Default for Decimal32 {
     }
 }
 
-fn zero_str(num_zeros: usize) -> String {
-    use std::iter::repeat;
-    repeat("0").take(num_zeros).collect::<String>()
-}
-
-fn pad_left(s: &str, num_zeros: usize) -> String {
-    zero_str(num_zeros) + s
-}
-
-fn pad_right(s: &str, num_zeros: usize) -> String {
-    s.to_string() + &zero_str(num_zeros)
-}
-
 // let width = match formatter.width() {
 //     Some(width) => width,
 //     None => 0
@@ -245,6 +232,8 @@ fn pad_right(s: &str, num_zeros: usize) -> String {
 // };
 impl fmt::Display for Decimal32 {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        use super::super::zero_pad::{pad_right, pad_left};
+
         let (is_negative, exponent, significand) = self.get_data();
 
         let digits = significand.to_string();
@@ -263,6 +252,7 @@ impl fmt::Display for Decimal32 {
             let right = pad_left(&digits, ((-exponent) - num_significant_digits) as usize);
             "0.".to_string() + &right
         };
+
         let decimal_str = sign + &pos_decimal_str;
         write!(formatter, "{}", decimal_str)
     }
