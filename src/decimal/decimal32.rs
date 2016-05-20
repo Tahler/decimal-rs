@@ -188,12 +188,12 @@ impl Decimal32 {
     }
 
     fn get_normal_exponent(&self) -> u32 {
-        let mask: u32 = 0b0_00111_111000_00000000000000000000;
+        let mask: u32 = 0b0_11111_111000_00000000000000000000;
         (self.data & mask) >> 23
     }
 
     fn get_shifted_exponent(&self) -> u32 {
-        let mask: u32 = 0b0_00001_111110_00000000000000000000;
+        let mask: u32 = 0b0_00111_111110_00000000000000000000;
         (self.data & mask) >> 21
     }
 
