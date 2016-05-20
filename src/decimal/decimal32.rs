@@ -5,6 +5,8 @@ use std::default::Default;
 use super::super::num::{Num, Zero, One, Signed};
 use super::parse_decimal_error::ParseDecimalError;
 
+const NUM_DIGITS: u32 = 7;
+
 const SIGN_MASK: u32 = 0b1_00000_000000_00000000000000000000;
 const COMBINATION_MASK: u32 = 0b0_11111_000000_00000000000000000000;
 
@@ -220,19 +222,64 @@ impl Default for Decimal32 {
     }
 }
 
+fn zero_str(num_zeros: usize) -> String {
+    use std::iter;
+    iter::repeat("0").take(num_zeros).collect::<String>()
+}
+
+fn pad_left(s: &str, num_zeros: usize) -> String {
+    zero_str(num_zeros) + s
+}
+
+fn pad_right(s: &str, num_zeros: usize) -> String {
+    s.to_string() + &zero_str(num_zeros)
+}
+
+// let width = match formatter.width() {
+//     Some(width) => width,
+//     None => 0
+// };
+// let precision = match formatter.precision() {
+//     Some(precision) => precision,
+//     None => 0
+// };
 impl fmt::Display for Decimal32 {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         let (is_negative, exponent, significand) = self.get_data();
-        let decimal_str = String::new();
-        let width = match formatter.width() {
-            Some(width) => width,
-            None => 0
+
+        let digits = significand.to_string();
+        let num_significant_digits = digits.len();
+
+        let sign = if is_negative { "-".to_string() } else { "".to_string() };
+
+        let left_digits = if exponent >= 0 {
+            pad_right(&digits, exponent as usize)
+        } else if exponent > -(num_significant_digits as i32) {
+            // The number of digits of the significand to the left of the decimal point.
+            let num_left_digits = (num_significant_digits as i32) + exponent;
+            digits[0..(num_left_digits as usize)].to_string()
+        } else {
+            "0".to_string()
         };
-        let precision = match formatter.precision() {
-            Some(precision) => precision,
-            None => 0
-        };
-        unimplemented!()
+
+        // let significant_right_digits =
+        // // The number of digits of the significand to the right of the decimal point.
+        // let num_right_digits = exponent - (NUM_DIGITS as i32);
+        // let right_digits = if num_right_digits > 0 {
+        //     format!("{}")
+        // } else {
+        //     "".to_string()
+        // };
+
+        let right_digits = "".to_string();
+
+        println!("{}", exponent);
+        println!("{}", significand);
+        println!("{}", left_digits);
+        println!("{}", right_digits);
+
+        let decimal_str = sign + &left_digits + "." + &right_digits;
+        write!(formatter, "{}", decimal_str)
     }
 }
 
@@ -423,5 +470,63 @@ impl Signed for Decimal32 {
     /// Note: Both zero and NaN can be positive or negative.
     fn is_negative(&self) -> bool {
         self.get_sign_field() != 0
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn get_exponent() {
+        let zero = Decimal32 {
+            // 101 => 0b0110_0101
+            data: 0b0_01100101_00000000000000000000000
+        };
+        let expected = 0;
+        let actual = zero.get_exponent();
+        assert_eq!(expected, actual);
+
+        let one = Decimal32 {
+            // 102 => 0b0110_0110
+            data: 0b0_01100110_00000000000000000000000
+        };
+        let expected = 1;
+        let actual = one.get_exponent();
+        assert_eq!(expected, actual);
+
+        let neg_one = Decimal32 {
+            // 100 => 0b0110_0101
+            data: 0b0_01100100_00000000000000000000000
+        };
+        let expected = -1;
+        let actual = neg_one.get_exponent();
+        assert_eq!(expected, actual);
+
+        let ninety = Decimal32 {
+            // 100 => 0b0110_0101
+            data: 0b0_10111111_00000000000000000000000
+        };
+        let expected = 90;
+        let actual = ninety.get_exponent();
+        assert_eq!(expected, actual);
+
+        let neg_101 = Decimal32 {
+            // 0 => 0b0000_0000
+            data: 0b0_00000000_00000000000000000000000
+        };
+        let expected = -101;
+        let actual = neg_101.get_exponent();
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn fmt() {
+        // TODO this is a dev test, needs updating
+        let d = Decimal32::from_data(false, 0, 1234567).unwrap();
+        let expected = "1234567.".to_string();
+        let actual = format!("{}", d);
+        println!("{}", actual);
+        assert_eq!(expected, actual);
     }
 }
