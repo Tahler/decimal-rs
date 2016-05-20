@@ -38,8 +38,8 @@ impl Decimal32 {
             Err("Exponent cannot be less than -101.".to_string())
         } else if exponent > 90 {
             Err("Exponent cannot be greater than 90.".to_string())
-        } else if significand > 10_485_759 {
-            Err("Significand cannot be greater than 10,485,759.".to_string())
+        } else if significand > 9_999_999 {
+            Err("Significand cannot be greater than 9,999,999.".to_string())
         } else {
             let sign_field = (if is_negative { 1 } else { 0 }) << 31;
             let stored_exponent = (exponent + 101) as u32;
