@@ -248,37 +248,22 @@ impl fmt::Display for Decimal32 {
         let (is_negative, exponent, significand) = self.get_data();
 
         let digits = significand.to_string();
-        let num_significant_digits = digits.len();
+        let num_significant_digits = digits.len() as i32;
 
         let sign = if is_negative { "-".to_string() } else { "".to_string() };
 
-        let left_digits = if exponent >= 0 {
+        let pos_decimal_str = if exponent >= 0 {
             pad_right(&digits, exponent as usize)
-        } else if exponent > -(num_significant_digits as i32) {
-            // The number of digits of the significand to the left of the decimal point.
-            let num_left_digits = (num_significant_digits as i32) + exponent;
-            digits[0..(num_left_digits as usize)].to_string()
+        } else if exponent > -num_significant_digits {
+            let num_left_digits = (num_significant_digits + exponent) as usize;
+            let left = digits[0..num_left_digits].to_string();
+            let right = digits[num_left_digits..].to_string();
+            left + "." + &right
         } else {
-            "0".to_string()
+            let right = pad_left(&digits, ((-exponent) - num_significant_digits) as usize);
+            "0.".to_string() + &right
         };
-
-        // let significant_right_digits =
-        // // The number of digits of the significand to the right of the decimal point.
-        // let num_right_digits = exponent - (NUM_DIGITS as i32);
-        // let right_digits = if num_right_digits > 0 {
-        //     format!("{}")
-        // } else {
-        //     "".to_string()
-        // };
-
-        let right_digits = "".to_string();
-
-        println!("{}", exponent);
-        println!("{}", significand);
-        println!("{}", left_digits);
-        println!("{}", right_digits);
-
-        let decimal_str = sign + &left_digits + "." + &right_digits;
+        let decimal_str = sign + &pos_decimal_str;
         write!(formatter, "{}", decimal_str)
     }
 }
@@ -569,11 +554,39 @@ mod test {
 
     #[test]
     fn fmt() {
-        // TODO this is a dev test, needs updating
-        let d = Decimal32::from_data(false, 0, 1234567).unwrap();
-        let expected = "1234567.".to_string();
-        let actual = format!("{}", d);
-        println!("{}", actual);
+        let no_change = Decimal32::from_data(false, 0, 1234567).unwrap();
+        let expected = "1234567".to_string();
+        let actual = format!("{}", no_change);
+        assert_eq!(expected, actual);
+
+        let shift_left_one = Decimal32::from_data(false, 1, 1234567).unwrap();
+        let expected = "12345670".to_string();
+        let actual = format!("{}", shift_left_one);
+        assert_eq!(expected, actual);
+
+        let neg_shift_left_one = Decimal32::from_data(true, 1, 1234567).unwrap();
+        let expected = "-12345670".to_string();
+        let actual = format!("{}", neg_shift_left_one);
+        assert_eq!(expected, actual);
+
+        let shift_right_one = Decimal32::from_data(false, -1, 1234567).unwrap();
+        let expected = "123456.7".to_string();
+        let actual = format!("{}", shift_right_one);
+        assert_eq!(expected, actual);
+
+        let shift_right_four = Decimal32::from_data(false, -4, 1234567).unwrap();
+        let expected = "123.4567".to_string();
+        let actual = format!("{}", shift_right_four);
+        assert_eq!(expected, actual);
+
+        let shift_right_seven = Decimal32::from_data(false, -7, 1234567).unwrap();
+        let expected = "0.1234567".to_string();
+        let actual = format!("{}", shift_right_seven);
+        assert_eq!(expected, actual);
+
+        let shift_right_ten = Decimal32::from_data(false, -10, 1234567).unwrap();
+        let expected = "0.0001234567".to_string();
+        let actual = format!("{}", shift_right_ten);
         assert_eq!(expected, actual);
     }
 }
