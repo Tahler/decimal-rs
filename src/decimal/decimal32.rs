@@ -65,12 +65,6 @@ impl Decimal32 {
         }
     }
 
-    pub fn to_f64(&self) -> f64 {
-        let (is_negative, exponent, significand) = self.get_data();
-        let multiplier = if is_negative { -1.0 } else { 1.0 };
-        multiplier * 10f64.powi(exponent) * (significand as f64)
-    }
-
     /// Creates and initializes a Decimal32 representation of positive infinity.
     pub fn infinity() -> Decimal32 {
         Decimal32 { data: 0b0_11110_000000_00000000000000000000 }
@@ -104,6 +98,12 @@ impl Decimal32 {
     /// Returns a Decimal32 with the exact bits passed in through `data`.
     pub fn from_bin(data: u32) -> Decimal32 {
         Decimal32 { data: data }
+    }
+
+    pub fn to_f64(&self) -> f64 {
+        let (is_negative, exponent, significand) = self.get_data();
+        let multiplier = if is_negative { -1.0 } else { 1.0 };
+        multiplier * 10f64.powi(exponent) * (significand as f64)
     }
 
     /// Returns true if the combination field signifies infinity, and false otherwise.
