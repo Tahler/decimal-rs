@@ -223,8 +223,8 @@ impl Default for Decimal32 {
 }
 
 fn zero_str(num_zeros: usize) -> String {
-    use std::iter;
-    iter::repeat("0").take(num_zeros).collect::<String>()
+    use std::iter::repeat;
+    repeat("0").take(num_zeros).collect::<String>()
 }
 
 fn pad_left(s: &str, num_zeros: usize) -> String {
