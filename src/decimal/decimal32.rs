@@ -397,6 +397,15 @@ impl Rem<Decimal32> for Decimal32 {
 
 impl PartialEq for Decimal32 {
     fn eq(&self, other: &Decimal32) -> bool {
+        if self.get_sign_field() != other.get_sign_field() {
+            return false;
+        }
+        if self.is_infinity() && other.is_infinity() {
+            return true;
+        }
+        if self.is_nan() && other.is_nan() {
+            return false;
+        }
         self.data == other.data // TODO this is horrible.
     }
 }
