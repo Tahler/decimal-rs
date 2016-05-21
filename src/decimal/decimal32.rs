@@ -15,7 +15,7 @@ const COMBINATION_MASK: u32 = 0b0_11111_000000_00000000000000000000;
 ///
 /// Decimal32 supports 7 decimal digits of significand and an exponent range of −95 to +96, i.e.
 /// ±0.000000×10^−95 to ±9.999999×10^96. (Equivalently, ±0000000×10^−101 to ±9999999×10^90.)
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct Decimal32 {
     data: u32,
 }
@@ -219,6 +219,26 @@ impl Decimal32 {
 impl Default for Decimal32 {
     fn default() -> Decimal32 {
         Decimal32::zero()
+    }
+}
+
+impl fmt::Debug for Decimal32 {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        let debug_str = if self.is_infinity() {
+            if self.is_positive() {
+                "Decimal32::INFINITY".to_string()
+            } else {
+                "Decimal32::NEG_INFINITY".to_string()
+            }
+        } else if self.is_nan() {
+            "Decimal32::NaN".to_string()
+        } else {
+            let (is_negative, exponent, significand) = self.get_data();
+            format!("Decimal32 {{ is_negative: {}, exponent: {}, significand: {} }}",
+                is_negative, exponent, significand)
+        };
+
+        write!(formatter, "{}", debug_str)
     }
 }
 
