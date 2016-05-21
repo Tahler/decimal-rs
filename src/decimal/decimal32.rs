@@ -599,4 +599,27 @@ mod test {
         let actual = format!("{}", shift_right_ten);
         assert_eq!(expected, actual);
     }
+
+    #[test]
+    fn add() {
+        use num::{Zero, One};
+
+        let zero = Decimal32::zero();
+        let one = Decimal32::one();
+        let pos_infinity = Decimal32::infinity();
+        let neg_infinity = Decimal32::neg_infinity();
+        let nan = Decimal32::qnan();
+
+        assert_eq!(pos_infinity, pos_infinity + pos_infinity);
+        assert_eq!(neg_infinity, neg_infinity + neg_infinity);
+
+        assert_eq!(nan, pos_infinity + neg_infinity);
+        assert_eq!(nan, neg_infinity + pos_infinity);
+
+        assert_eq!(nan, nan + nan);
+        assert_eq!(nan, nan + zero);
+        assert_eq!(nan, nan + one);
+
+        // TODO
+    }
 }
