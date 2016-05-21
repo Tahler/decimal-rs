@@ -622,12 +622,12 @@ mod test {
         assert_eq!(pos_infinity, pos_infinity + pos_infinity);
         assert_eq!(neg_infinity, neg_infinity + neg_infinity);
 
-        assert_eq!(nan, pos_infinity + neg_infinity);
-        assert_eq!(nan, neg_infinity + pos_infinity);
+        assert!((pos_infinity + neg_infinity).is_nan());
+        assert!((neg_infinity + pos_infinity).is_nan());
 
-        assert_eq!(nan, nan + nan);
-        assert_eq!(nan, nan + zero);
-        assert_eq!(nan, nan + one);
+        assert!((nan + zero).is_nan());
+        assert!((nan + one).is_nan());
+        assert!((nan + nan).is_nan());
 
         // TODO
     }
