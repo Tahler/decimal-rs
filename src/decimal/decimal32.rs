@@ -397,7 +397,7 @@ impl Rem<Decimal32> for Decimal32 {
 
 impl PartialEq for Decimal32 {
     fn eq(&self, other: &Decimal32) -> bool {
-        true // TODO
+        self.data == other.data // TODO this is horrible.
     }
 }
 
@@ -415,7 +415,7 @@ impl Zero for Decimal32 {
     }
 
     fn is_zero(&self) -> bool {
-        true
+        true // TODO
     }
 }
 
