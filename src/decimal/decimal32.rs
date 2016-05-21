@@ -424,7 +424,7 @@ impl Zero for Decimal32 {
     }
 
     fn is_zero(&self) -> bool {
-        true // TODO
+        (!self.is_infinity() && !self.is_nan()) && self.get_significand() == 0
     }
 }
 
