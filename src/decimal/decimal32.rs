@@ -564,8 +564,8 @@ mod test {
         let actual = format!("{}", shift_right_one);
         assert_eq!(expected, actual);
 
-        let shift_right_four = Decimal32::from_data(false, -4, 1234567).unwrap();
-        let expected = "123.4567".to_string();
+        let shift_right_four = Decimal32::from_data(false, -4, 12345).unwrap();
+        let expected = "1.2345".to_string();
         let actual = format!("{}", shift_right_four);
         assert_eq!(expected, actual);
 
@@ -574,8 +574,8 @@ mod test {
         let actual = format!("{}", shift_right_seven);
         assert_eq!(expected, actual);
 
-        let shift_right_ten = Decimal32::from_data(false, -10, 1234567).unwrap();
-        let expected = "0.0001234567".to_string();
+        let shift_right_ten = Decimal32::from_data(false, -10, 1234).unwrap();
+        let expected = "0.0000001234".to_string();
         let actual = format!("{}", shift_right_ten);
         assert_eq!(expected, actual);
     }
