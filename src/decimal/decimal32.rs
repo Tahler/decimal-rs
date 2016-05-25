@@ -26,6 +26,9 @@ pub struct Decimal32 {
 pub const ZERO: Decimal32 = Decimal32 { data: 0b0_01100101_00000000000000000000000 };
 pub const ONE: Decimal32 = Decimal32 { data: 0b0_01100101_00000000000000000000001 };
 
+pub const MAX_VALUE: Decimal32 = Decimal32 { data: 0b0_11_10111111_110001001011001111111 };
+pub const MIN_VALUE: Decimal32 = Decimal32 { data: 0b1_11_10111111_110001001011001111111 };
+
 pub const INFINITY: Decimal32 = Decimal32 { data: 0b0_11110_000000_00000000000000000000 };
 pub const NEG_INFINITY: Decimal32 = Decimal32 { data: 0b1_11110_000000_00000000000000000000 };
 pub const QNAN: Decimal32 = Decimal32 { data: 0b0_11111_000000_00000000000000000000 };
