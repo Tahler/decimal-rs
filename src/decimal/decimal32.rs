@@ -447,7 +447,7 @@ impl Num for Decimal32 {
 
 impl Zero for Decimal32 {
     fn zero() -> Decimal32 {
-        Decimal32 { data: 0b0_00000_000000_00000000000000000000 }
+        Decimal32 { data: 0b0_01100101_00000000000000000000000 }
     }
 
     fn is_zero(&self) -> bool {
@@ -457,7 +457,7 @@ impl Zero for Decimal32 {
 
 impl One for Decimal32 {
     fn one() -> Decimal32 {
-        Decimal32 { data: 0b0_00000_000000_00000000000000000001 }
+        Decimal32 { data: 0b0_01100101_00000000000000000000001 }
     }
 }
 
