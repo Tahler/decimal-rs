@@ -437,7 +437,9 @@ impl PartialEq for Decimal32 {
         if self.is_nan() && other.is_nan() {
             return false;
         }
-        self.data == other.data // TODO this is horrible.
+        let (left_is_neg, left_significand, right_is_neg, right_significand, exponent) =
+                to_common_exponent(&self, &other);
+        left_is_neg == right_is_neg && left_significand == right_significand
     }
 }
 
