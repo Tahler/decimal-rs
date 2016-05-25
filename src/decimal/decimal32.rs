@@ -48,7 +48,11 @@ impl Decimal32 {
         } else if exponent > 90 || significand > 9_999_999 {
             INFINITY
         } else {
-            let sign_field = (if is_negative { 1 } else { 0 }) << 31;
+            let sign_field = (if is_negative {
+                1
+            } else {
+                0
+            }) << 31;
             let stored_exponent = (exponent + 101) as u32;
 
             let implicit_field;
@@ -65,9 +69,7 @@ impl Decimal32 {
                 // remove the implicit (100)
                 significand_field = significand - 0b1000_0000_0000_0000_0000_0000;
             }
-            Decimal32 {
-                data: sign_field + implicit_field + exponent_field + significand_field
-            }
+            Decimal32 { data: sign_field + implicit_field + exponent_field + significand_field }
         }
     }
 
@@ -78,7 +80,11 @@ impl Decimal32 {
 
     pub fn to_f64(&self) -> f64 {
         let (is_negative, exponent, significand) = self.get_data();
-        let multiplier = if is_negative { -1.0 } else { 1.0 };
+        let multiplier = if is_negative {
+            -1.0
+        } else {
+            1.0
+        };
         multiplier * 10f64.powi(exponent) * (significand as f64)
     }
 
@@ -115,7 +121,8 @@ impl Decimal32 {
         let sign = self.get_sign_field() != 0;
         let (exponent, significand) = if self.get_first_two_bits_combination_field() < 3 {
             ((self.get_normal_exponent() as i32) - 101, self.get_normal_significand())
-        } else { // self.get_second_two_bits_combination_field() < 3
+        } else {
+            // self.get_second_two_bits_combination_field() < 3
             ((self.get_shifted_exponent() as i32) - 101, self.get_shifted_significand())
         };
         (sign, exponent, significand)
@@ -127,7 +134,8 @@ impl Decimal32 {
     pub fn get_exponent(&self) -> i32 {
         let exponent = if self.get_first_two_bits_combination_field() < 3 {
             self.get_normal_exponent()
-        } else { // self.get_second_two_bits_combination_field() < 3
+        } else {
+            // self.get_second_two_bits_combination_field() < 3
             self.get_shifted_exponent()
         };
         (exponent as i32) - 101
@@ -139,7 +147,8 @@ impl Decimal32 {
     pub fn get_significand(&self) -> u32 {
         if self.get_first_two_bits_combination_field() < 3 {
             self.get_normal_significand()
-        } else { // self.get_second_two_bits_combination_field() < 3
+        } else {
+            // self.get_second_two_bits_combination_field() < 3
             self.get_shifted_significand()
         }
     }
@@ -202,11 +211,11 @@ fn to_common_exponent(left: &Decimal32, right: &Decimal32) -> (bool, u32, bool, 
     match left_exponent.cmp(&right_exponent) {
         Ordering::Equal => {
             (left_neg, left_significand, right_neg, right_significand, left_exponent)
-        },
+        }
         Ordering::Less => {
             let shift = num::pow(10u32, (right_exponent - left_exponent) as usize);
             (left_neg, left_significand, right_neg, right_significand * shift, left_exponent)
-        },
+        }
         Ordering::Greater => {
             let shift = num::pow(10u32, (left_exponent - right_exponent) as usize);
             (left_neg, left_significand * shift, right_neg, right_significand, right_exponent)
@@ -233,7 +242,9 @@ impl fmt::Debug for Decimal32 {
         } else {
             let (is_negative, exponent, significand) = self.get_data();
             format!("Decimal32 {{ is_negative: {}, exponent: {}, significand: {} }}",
-                is_negative, exponent, significand)
+                    is_negative,
+                    exponent,
+                    significand)
         };
 
         write!(formatter, "{}", debug_str)
@@ -257,7 +268,11 @@ impl fmt::Display for Decimal32 {
         let digits = significand.to_string();
         let num_significant_digits = digits.len() as i32;
 
-        let sign = if is_negative { "-".to_string() } else { "".to_string() };
+        let sign = if is_negative {
+            "-".to_string()
+        } else {
+            "".to_string()
+        };
 
         let pos_decimal_str = if exponent >= 0 {
             pad_right(&digits, exponent as usize)
@@ -337,7 +352,7 @@ impl Add<Decimal32> for Decimal32 {
             }
         } else {
             let (left_is_neg, left_significand, right_is_neg, right_significand, exponent) =
-                    to_common_exponent(&self, &other);
+                to_common_exponent(&self, &other);
 
             let signed_left_significand = if left_is_neg {
                 -(left_significand as i32)
@@ -410,7 +425,7 @@ impl PartialEq for Decimal32 {
             return false;
         }
         let (left_is_neg, left_significand, right_is_neg, right_significand, exponent) =
-                to_common_exponent(&self, &other);
+            to_common_exponent(&self, &other);
         left_is_neg == right_is_neg && left_significand == right_significand
     }
 }
@@ -490,7 +505,7 @@ mod test {
     fn get_exponent() {
         let zero = Decimal32 {
             // 101 => 0b0110_0101
-            data: 0b0_01100101_00000000000000000000000
+            data: 0b0_01100101_00000000000000000000000,
         };
         let expected = 0;
         let actual = zero.get_exponent();
@@ -498,7 +513,7 @@ mod test {
 
         let one = Decimal32 {
             // 102 => 0b0110_0110
-            data: 0b0_01100110_00000000000000000000000
+            data: 0b0_01100110_00000000000000000000000,
         };
         let expected = 1;
         let actual = one.get_exponent();
@@ -506,7 +521,7 @@ mod test {
 
         let neg_one = Decimal32 {
             // 100 => 0b0110_0101
-            data: 0b0_01100100_00000000000000000000000
+            data: 0b0_01100100_00000000000000000000000,
         };
         let expected = -1;
         let actual = neg_one.get_exponent();
@@ -514,7 +529,7 @@ mod test {
 
         let ninety = Decimal32 {
             // 100 => 0b0110_0101
-            data: 0b0_10111111_00000000000000000000000
+            data: 0b0_10111111_00000000000000000000000,
         };
         let expected = 90;
         let actual = ninety.get_exponent();
@@ -522,7 +537,7 @@ mod test {
 
         let neg_101 = Decimal32 {
             // 0 => 0b0000_0000
-            data: 0b0_00000000_00000000000000000000000
+            data: 0b0_00000000_00000000000000000000000,
         };
         let expected = -101;
         let actual = neg_101.get_exponent();
@@ -530,7 +545,7 @@ mod test {
 
         let alternate = Decimal32 {
             // 64 => 0b0100_0000
-            data: 0b0_11_01000000_000000000000000000000
+            data: 0b0_11_01000000_000000000000000000000,
         };
         let expected = -37;
         let actual = alternate.get_exponent();
@@ -539,38 +554,30 @@ mod test {
 
     #[test]
     fn get_significand() {
-        let zero = Decimal32 {
-            data: 0b0_0000000_00000000000000000000000
-        };
+        let zero = Decimal32 { data: 0b0_0000000_00000000000000000000000 };
         let expected = 0;
         let actual = zero.get_significand();
         assert_eq!(expected, actual);
 
-        let one = Decimal32 {
-            data: 0b0_0000000_00000000000000000000001
-        };
+        let one = Decimal32 { data: 0b0_0000000_00000000000000000000001 };
         let expected = 1;
         let actual = one.get_significand();
         assert_eq!(expected, actual);
 
         let eighty = Decimal32 {
             // 80 => 0b0101_0000
-            data: 0b0_00000000_00000000000000001010000
+            data: 0b0_00000000_00000000000000001010000,
         };
         let expected = 80;
         let actual = eighty.get_significand();
         assert_eq!(expected, actual);
 
-        let first_24th_bit = Decimal32 {
-            data: 0b0_11_00000000_000000000000000000000
-        };
+        let first_24th_bit = Decimal32 { data: 0b0_11_00000000_000000000000000000000 };
         let expected = 8388608;
         let actual = first_24th_bit.get_significand();
         assert_eq!(expected, actual);
 
-        let max = Decimal32 {
-            data: 0b0_11_00000000_110001001011001111111
-        };
+        let max = Decimal32 { data: 0b0_11_00000000_110001001011001111111 };
         let expected = 9_999_999;
         let actual = max.get_significand();
         assert_eq!(expected, actual);
