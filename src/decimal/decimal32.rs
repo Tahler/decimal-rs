@@ -23,6 +23,15 @@ pub struct Decimal32 {
     data: u32,
 }
 
+pub const ZERO: Decimal32 = Decimal32 { data: 0b0_01100101_00000000000000000000000 };
+pub const ONE: Decimal32 = Decimal32 { data: 0b0_01100101_00000000000000000000001 };
+
+pub const INFINITY: Decimal32 = Decimal32 { data: 0b0_11110_000000_00000000000000000000 };
+pub const NEG_INFINITY: Decimal32 = Decimal32 { data: 0b1_11110_000000_00000000000000000000 };
+pub const QNAN: Decimal32 = Decimal32 { data: 0b0_11111_000000_00000000000000000000 };
+pub const SNAN: Decimal32 = Decimal32 { data: 0b0_11111_100000_00000000000000000000 };
+pub const NAN: Decimal32 = QNAN;
+
 impl Decimal32 {
     /// Creates and initializes a Decimal32 representation of zero.
     pub fn new() -> Decimal32 {
@@ -33,16 +42,11 @@ impl Decimal32 {
     /// significand, respectively.
     ///
     /// Returns Err(String) if either the exponent or significand is out of range.
-    pub fn from_data(is_negative: bool,
-                     exponent: i32,
-                     significand: u32)
-                     -> Result<Decimal32, String> {
+    pub fn from_data(is_negative: bool, exponent: i32, significand: u32) -> Decimal32 {
         if exponent < -101 {
-            Err("Exponent cannot be less than -101.".to_string())
-        } else if exponent > 90 {
-            Err("Exponent cannot be greater than 90.".to_string())
-        } else if significand > 9_999_999 {
-            Err("Significand cannot be greater than 9,999,999.".to_string())
+            NEG_INFINITY
+        } else if exponent > 90 || significand > 9_999_999 {
+            INFINITY
         } else {
             let sign_field = (if is_negative { 1 } else { 0 }) << 31;
             let stored_exponent = (exponent + 101) as u32;
@@ -61,41 +65,10 @@ impl Decimal32 {
                 // remove the implicit (100)
                 significand_field = significand - 0b1000_0000_0000_0000_0000_0000;
             }
-            let ok_result = Decimal32 {
+            Decimal32 {
                 data: sign_field + implicit_field + exponent_field + significand_field
-            };
-            Ok(ok_result)
+            }
         }
-    }
-
-    /// Creates and initializes a Decimal32 representation of positive infinity.
-    pub fn infinity() -> Decimal32 {
-        Decimal32 { data: 0b0_11110_000000_00000000000000000000 }
-    }
-
-    /// Creates and initializes a Decimal32 representation of negative infinity.
-    pub fn neg_infinity() -> Decimal32 {
-        Decimal32 { data: 0b1_11110_000000_00000000000000000000 }
-    }
-
-    /// Creates and initializes a Decimal32 that is specially encoded as a quiet NaN.
-    pub fn quiet_nan() -> Decimal32 {
-        Decimal32 { data: 0b0_11111_000000_00000000000000000000 }
-    }
-
-    /// Creates and initializes a Decimal32 that is specially encoded as a quiet NaN.
-    pub fn qnan() -> Decimal32 {
-        Decimal32 { data: 0b0_11111_000000_00000000000000000000 }
-    }
-
-    /// Creates and initializes a Decimal32 that is specially encoded as a signaling NaN.
-    pub fn signaling_nan() -> Decimal32 {
-        Decimal32 { data: 0b0_11111_100000_00000000000000000000 }
-    }
-
-    /// Creates and initializes a Decimal32 that is specially encoded as a signaling NaN.
-    pub fn snan() -> Decimal32 {
-        Decimal32 { data: 0b0_11111_100000_00000000000000000000 }
     }
 
     /// Returns a Decimal32 with the exact bits passed in through `data`.
@@ -211,7 +184,7 @@ impl Decimal32 {
         implicit_100 + (self.data & mask)
     }
 
-    fn shift_exponent(&self, factor: i32) -> Result<Decimal32, String> {
+    fn shift_exponent(&self, factor: i32) -> Decimal32 {
         let (sign, exponent, significand) = self.get_data();
         let shifted_exponent = exponent + factor;
         let shifted_significand = ((significand as f64) * 10f64.powi(-factor)) as u32;
@@ -321,45 +294,45 @@ impl Add<Decimal32> for Decimal32 {
     fn add(self, other: Decimal32) -> Decimal32 {
         if self.is_nan() || other.is_nan() {
             // if either operand is NaN, so is the result
-            Decimal32::qnan()
+            NAN
         } else if self.is_infinity() {
             if self.is_positive() {
                 if other.is_neg_infinity() {
-                    // if the operands are opposing infinities, the result is sNaN
-                    Decimal32::snan()
+                    // if the operands are opposing infinities, the result is NaN
+                    NAN
                 } else {
                     // if the left operand is positive infinity, and the other is not negative
                     // infinity or NaN, the result is positive infinity
-                    Decimal32::infinity()
+                    INFINITY
                 }
             } else {
                 if other.is_pos_infinity() {
-                    // if the operands are opposing infinities, the result is sNaN
-                    Decimal32::snan()
+                    // if the operands are opposing infinities, the result is NaN
+                    NAN
                 } else {
                     // if the left operand is negative infinity, and the other is not positive
                     // infinity or NaN, the result is negative infinity
-                    Decimal32::neg_infinity()
+                    NEG_INFINITY
                 }
             }
         } else if other.is_infinity() {
             if other.is_positive() {
                 if self.is_neg_infinity() {
-                    // if the operands are opposing infinities, the result is sNaN
-                    Decimal32::snan()
+                    // if the operands are opposing infinities, the result is NaN
+                    NAN
                 } else {
                     // if the left operand is positive infinity, and the other is not negative
                     // infinity or NaN, the result is positive infinity
-                    Decimal32::infinity()
+                    INFINITY
                 }
             } else {
                 if self.is_pos_infinity() {
-                    // if the operands are opposing infinities, the result is sNaN
-                    Decimal32::snan()
+                    // if the operands are opposing infinities, the result is NaN
+                    NAN
                 } else {
                     // if the left operand is negative infinity, and the other is not positive
                     // infinity or NaN, the result is negative infinity
-                    Decimal32::neg_infinity()
+                    NEG_INFINITY
                 }
             }
         } else {
@@ -380,8 +353,7 @@ impl Add<Decimal32> for Decimal32 {
             let signed_sum_significand: i32 = signed_left_significand + signed_right_significand;
             let sum_is_negative = signed_sum_significand < 0;
             let unsigned_sum_significand = num::abs(signed_sum_significand) as u32;
-            // TODO don't let me get away with unwrapping here.
-            Decimal32::from_data(sum_is_negative, exponent, unsigned_sum_significand).unwrap()
+            Decimal32::from_data(sum_is_negative, exponent, unsigned_sum_significand)
         }
     }
 }
@@ -453,7 +425,7 @@ impl Num for Decimal32 {
 
 impl Zero for Decimal32 {
     fn zero() -> Decimal32 {
-        Decimal32 { data: 0b0_01100101_00000000000000000000000 }
+        ZERO
     }
 
     fn is_zero(&self) -> bool {
@@ -463,7 +435,7 @@ impl Zero for Decimal32 {
 
 impl One for Decimal32 {
     fn one() -> Decimal32 {
-        Decimal32 { data: 0b0_01100101_00000000000000000000001 }
+        ONE
     }
 }
 
@@ -606,37 +578,37 @@ mod test {
 
     #[test]
     fn fmt() {
-        let no_change = Decimal32::from_data(false, 0, 1234567).unwrap();
+        let no_change = Decimal32::from_data(false, 0, 1234567);
         let expected = "1234567".to_string();
         let actual = format!("{}", no_change);
         assert_eq!(expected, actual);
 
-        let shift_left_one = Decimal32::from_data(false, 1, 1234567).unwrap();
+        let shift_left_one = Decimal32::from_data(false, 1, 1234567);
         let expected = "12345670".to_string();
         let actual = format!("{}", shift_left_one);
         assert_eq!(expected, actual);
 
-        let neg_shift_left_one = Decimal32::from_data(true, 1, 1234567).unwrap();
+        let neg_shift_left_one = Decimal32::from_data(true, 1, 1234567);
         let expected = "-12345670".to_string();
         let actual = format!("{}", neg_shift_left_one);
         assert_eq!(expected, actual);
 
-        let shift_right_one = Decimal32::from_data(false, -1, 1234567).unwrap();
+        let shift_right_one = Decimal32::from_data(false, -1, 1234567);
         let expected = "123456.7".to_string();
         let actual = format!("{}", shift_right_one);
         assert_eq!(expected, actual);
 
-        let shift_right_four = Decimal32::from_data(false, -4, 12345).unwrap();
+        let shift_right_four = Decimal32::from_data(false, -4, 12345);
         let expected = "1.2345".to_string();
         let actual = format!("{}", shift_right_four);
         assert_eq!(expected, actual);
 
-        let shift_right_seven = Decimal32::from_data(false, -7, 1234567).unwrap();
+        let shift_right_seven = Decimal32::from_data(false, -7, 1234567);
         let expected = "0.1234567".to_string();
         let actual = format!("{}", shift_right_seven);
         assert_eq!(expected, actual);
 
-        let shift_right_ten = Decimal32::from_data(false, -10, 1234).unwrap();
+        let shift_right_ten = Decimal32::from_data(false, -10, 1234);
         let expected = "0.0000001234".to_string();
         let actual = format!("{}", shift_right_ten);
         assert_eq!(expected, actual);
@@ -644,24 +616,22 @@ mod test {
 
     #[test]
     fn add() {
-        use num::{Zero, One};
-
-        let zero = Decimal32::zero();
-        let one = Decimal32::one();
-        let pos_infinity = Decimal32::infinity();
-        let neg_infinity = Decimal32::neg_infinity();
-        let nan = Decimal32::qnan();
+        let zero = ZERO;
+        let one = ONE;
+        let pos_infinity = INFINITY;
+        let neg_infinity = NEG_INFINITY;
+        let nan = NAN;
 
         assert_eq!(one, zero + one);
 
-        let two1 = Decimal32::from_data(false, -1, 20).unwrap();
+        let two1 = Decimal32::from_data(false, -1, 20);
         assert_eq!(two1, one + one);
 
-        let two2 = Decimal32::from_data(false, -2, 200).unwrap();
+        let two2 = Decimal32::from_data(false, -2, 200);
         assert_eq!(two2, one + one);
 
-        let eighteen = Decimal32::from_data(false, -2, 1800).unwrap();
-        let mut sum = Decimal32::zero();
+        let eighteen = Decimal32::from_data(false, -2, 1800);
+        let mut sum = ZERO;
         for _ in 0..18 {
             sum = sum + one;
         }
