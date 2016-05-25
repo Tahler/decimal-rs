@@ -2,7 +2,10 @@ use std::ops::{Add, Sub, Mul, Div, Neg, Rem};
 use std::cmp::PartialEq;
 use std::fmt;
 use std::default::Default;
-use super::super::num::{Num, Zero, One, Signed};
+
+use num;
+use num::{Num, Zero, One, Signed};
+
 use super::parse_decimal_error::ParseDecimalError;
 
 const NUM_DIGITS: u32 = 7;
@@ -216,6 +219,24 @@ impl Decimal32 {
     }
 }
 
+fn to_common_exponent(left: &Decimal32, right: &Decimal32) -> (u32, u32, i32) {
+    use std::cmp::Ordering;
+
+    let (_, left_exponent, left_significand) = left.get_data();
+    let (_, right_exponent, right_significand) = right.get_data();
+    match left_exponent.cmp(&right_exponent) {
+        Ordering::Equal => (left_significand, right_significand, left_exponent),
+        Ordering::Less => {
+            let shift = num::pow(10, (right_exponent - left_exponent) as usize);
+            (left_significand, right_significand * shift, left_exponent)
+        },
+        Ordering::Greater => {
+            let shift = num::pow(10, (left_exponent - right_exponent) as usize);
+            (left_significand * shift, right_significand, right_exponent)
+        }
+    }
+}
+
 impl Default for Decimal32 {
     fn default() -> Decimal32 {
         Decimal32::zero()
@@ -340,17 +361,23 @@ impl Add<Decimal32> for Decimal32 {
                 }
             }
         } else {
-            let exponent;
-            let significand;
-            if self.get_first_two_bits_combination_field() < 3 {
-                exponent = self.get_normal_exponent();
-                significand = self.get_normal_significand();
+            let (left_significand, right_significand, exponent) = to_common_exponent(&self, &other);
+
+            let signed_left_significand = if self.is_negative() {
+                -(left_significand as i32)
             } else {
-                // self.get_second_two_bits_combination_field() < 3
-                exponent = self.get_shifted_exponent();
-                significand = self.get_shifted_significand();
-            }
-            unimplemented!() // TODO
+                (left_significand as i32)
+            };
+            let signed_right_significand = if other.is_negative() {
+                -(right_significand as i32)
+            } else {
+                (right_significand as i32)
+            };
+
+            let signed_sum_significand: i32 = signed_left_significand + signed_right_significand;
+            let sum_is_negative = signed_sum_significand < 0;
+            let unsigned_sum_significand = num::abs(signed_sum_significand) as u32;
+            Decimal32::from_data(sum_is_negative, exponent, unsigned_sum_significand).unwrap()
         }
     }
 }
