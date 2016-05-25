@@ -219,20 +219,24 @@ impl Decimal32 {
     }
 }
 
-fn to_common_exponent(left: &Decimal32, right: &Decimal32) -> (u32, u32, i32) {
+fn to_common_exponent(left: &Decimal32, right: &Decimal32) -> (bool, u32, bool, u32, i32) {
     use std::cmp::Ordering;
 
-    let (_, left_exponent, left_significand) = left.get_data();
-    let (_, right_exponent, right_significand) = right.get_data();
+    let (left_neg, left_exponent, left_significand) = left.get_data();
+    let (right_neg, right_exponent, right_significand) = right.get_data();
+    println!("{}, {}, {}", left_neg, left_exponent, left_significand);
+    println!("{}, {}, {}", right_neg, right_exponent, right_significand);
     match left_exponent.cmp(&right_exponent) {
-        Ordering::Equal => (left_significand, right_significand, left_exponent),
+        Ordering::Equal => {
+            (left_neg, left_significand, right_neg, right_significand, left_exponent)
+        },
         Ordering::Less => {
-            let shift = num::pow(10, (right_exponent - left_exponent) as usize);
-            (left_significand, right_significand * shift, left_exponent)
+            let shift = num::pow(10u32, (right_exponent - left_exponent) as usize);
+            (left_neg, left_significand, right_neg, right_significand * shift, left_exponent)
         },
         Ordering::Greater => {
-            let shift = num::pow(10, (left_exponent - right_exponent) as usize);
-            (left_significand * shift, right_significand, right_exponent)
+            let shift = num::pow(10u32, (left_exponent - right_exponent) as usize);
+            (left_neg, left_significand * shift, right_neg, right_significand, right_exponent)
         }
     }
 }
@@ -315,8 +319,6 @@ impl Add<Decimal32> for Decimal32 {
     type Output = Decimal32;
 
     fn add(self, other: Decimal32) -> Decimal32 {
-        let sign = self.get_sign_field();
-
         if self.is_nan() || other.is_nan() {
             // if either operand is NaN, so is the result
             Decimal32::qnan()
@@ -361,14 +363,15 @@ impl Add<Decimal32> for Decimal32 {
                 }
             }
         } else {
-            let (left_significand, right_significand, exponent) = to_common_exponent(&self, &other);
+            let (left_is_neg, left_significand, right_is_neg, right_significand, exponent) =
+                    to_common_exponent(&self, &other);
 
-            let signed_left_significand = if self.is_negative() {
+            let signed_left_significand = if left_is_neg {
                 -(left_significand as i32)
             } else {
                 (left_significand as i32)
             };
-            let signed_right_significand = if other.is_negative() {
+            let signed_right_significand = if right_is_neg {
                 -(right_significand as i32)
             } else {
                 (right_significand as i32)
@@ -377,6 +380,7 @@ impl Add<Decimal32> for Decimal32 {
             let signed_sum_significand: i32 = signed_left_significand + signed_right_significand;
             let sum_is_negative = signed_sum_significand < 0;
             let unsigned_sum_significand = num::abs(signed_sum_significand) as u32;
+            // TODO don't let me get away with unwrapping here.
             Decimal32::from_data(sum_is_negative, exponent, unsigned_sum_significand).unwrap()
         }
     }
