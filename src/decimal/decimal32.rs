@@ -48,8 +48,14 @@ impl Decimal32 {
     pub fn from_data(is_negative: bool, exponent: i32, significand: u32) -> Decimal32 {
         if exponent < -101 {
             NEG_INFINITY
-        } else if exponent > 90 || significand > 9_999_999 {
+        } else if exponent > 90 {
             INFINITY
+        } else if significand > 9_999_999 {
+            if is_negative {
+                NEG_INFINITY
+            } else {
+                INFINITY
+            }
         } else {
             let sign_field = (if is_negative {
                 1
