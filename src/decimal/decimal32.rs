@@ -652,6 +652,24 @@ mod test {
         let neg_infinity = Decimal32::neg_infinity();
         let nan = Decimal32::qnan();
 
+        assert_eq!(one, zero + one);
+
+        let two1 = Decimal32::from_data(false, -1, 20).unwrap();
+        assert_eq!(two1, one + one);
+
+        let two2 = Decimal32::from_data(false, -2, 200).unwrap();
+        assert_eq!(two2, one + one);
+
+        let eighteen = Decimal32::from_data(false, -2, 1800).unwrap();
+        let mut sum = Decimal32::zero();
+        for _ in 0..18 {
+            sum = sum + one;
+        }
+        assert_eq!(eighteen, sum);
+
+        // TODO overflow cases
+
+        // special values
         assert_eq!(pos_infinity, pos_infinity + pos_infinity);
         assert_eq!(neg_infinity, neg_infinity + neg_infinity);
 
@@ -661,7 +679,5 @@ mod test {
         assert!((nan + zero).is_nan());
         assert!((nan + one).is_nan());
         assert!((nan + nan).is_nan());
-
-        // TODO
     }
 }
