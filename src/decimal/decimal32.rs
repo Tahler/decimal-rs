@@ -209,8 +209,6 @@ fn to_common_exponent(left: &Decimal32, right: &Decimal32) -> (bool, u32, bool, 
 
     let (left_neg, left_exponent, left_significand) = left.get_data();
     let (right_neg, right_exponent, right_significand) = right.get_data();
-    println!("{}, {}, {}", left_neg, left_exponent, left_significand);
-    println!("{}, {}, {}", right_neg, right_exponent, right_significand);
     match left_exponent.cmp(&right_exponent) {
         Ordering::Equal => {
             (left_neg, left_significand, right_neg, right_significand, left_exponent)
