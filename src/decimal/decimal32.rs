@@ -651,7 +651,8 @@ mod test {
         }
         assert_eq!(eighteen, sum);
 
-        // TODO overflow cases
+        assert!((MAX_VALUE + MAX_VALUE).is_infinity());
+        assert!((MIN_VALUE + MIN_VALUE).is_neg_infinity());
 
         // special values
         assert_eq!(pos_infinity, pos_infinity + pos_infinity);
