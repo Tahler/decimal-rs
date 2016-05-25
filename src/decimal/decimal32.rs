@@ -238,7 +238,7 @@ impl fmt::Debug for Decimal32 {
                 "Decimal32::NEG_INFINITY".to_string()
             }
         } else if self.is_nan() {
-            "Decimal32::NaN".to_string()
+            "Decimal32::NAN".to_string()
         } else {
             let (is_negative, exponent, significand) = self.get_data();
             format!("Decimal32 {{ is_negative: {}, exponent: {}, significand: {} }}",
