@@ -50,7 +50,9 @@ impl Decimal32 {
     /// Creates and initialize a Decimal32 from its significant parts: the sign, exponent, and
     /// significand, respectively.
     ///
-    /// Returns Err(String) if either the exponent or significand is out of range.
+    /// If the exponent is out of range (less than -101 or greater than 90), the data will be
+    /// shifted in an attempt to be fit into the 32-bit representation. If the shifted components
+    /// still do not fit, the result may end in an "unexpected" value (i.e. ±infinity or zero)
     pub fn from_data(is_negative: bool, exponent: i32, significand: u32) -> Decimal32 {
         if exponent < MIN_EXPONENT {
             let (shifted_exponent, shifted_significand) = shift_exponent(significand,
