@@ -537,6 +537,16 @@ mod test {
         assert_eq!(one2, one3);
         assert_eq!(one3, one4);
         assert_eq!(one4, one1);
+
+        let zero1 = Decimal32::from_data(false, 0, 0);
+        let zero2 = Decimal32::from_data(false, 11, 0);
+        let zero3 = Decimal32::from_data(false, 90, 0);
+        let zero4 = Decimal32::from_data(false, -101, 0);
+
+        assert_eq!(zero1, zero2);
+        assert_eq!(zero2, zero3);
+        assert_eq!(zero3, zero4);
+        assert_eq!(zero4, zero1);
     }
 
     #[test]
