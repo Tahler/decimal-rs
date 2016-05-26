@@ -449,7 +449,7 @@ impl PartialEq for Decimal32 {
         if self.is_nan() && other.is_nan() {
             return false;
         }
-        let (left_is_neg, left_significand, right_is_neg, right_significand, exponent) =
+        let (left_is_neg, left_significand, right_is_neg, right_significand, _) =
             to_common_exponent(&self, &other);
         left_is_neg == right_is_neg && left_significand == right_significand
     }
@@ -525,6 +525,24 @@ impl Signed for Decimal32 {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn eq() {
+        let one1 = Decimal32::from_data(false, 0, 1);
+        let one2 = Decimal32::from_data(false, -1, 10);
+        let one3 = Decimal32::from_data(false, -2, 100);
+        let one4 = Decimal32::from_data(false, -3, 1000);
+
+        assert_eq!(one1, one2);
+        assert_eq!(one2, one3);
+        assert_eq!(one3, one4);
+        assert_eq!(one4, one1);
+    }
+
+    #[test]
+    fn from_data() {
+        // let expected =
+    }
 
     #[test]
     fn get_exponent() {
