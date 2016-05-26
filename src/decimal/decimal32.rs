@@ -532,25 +532,30 @@ mod test {
 
     #[test]
     fn eq() {
+        let zero1 = Decimal32::from_data(true, 0, 0);
+        let zero2 = Decimal32::from_data(false, 11, 0);
+        let zero3 = Decimal32::from_data(true, 90, 0);
+        let zero4 = Decimal32::from_data(false, -101, 0);
+        assert_eq!(zero1, zero2);
+        assert_eq!(zero2, zero3);
+        assert_eq!(zero3, zero4);
+        assert_eq!(zero4, zero1);
+
         let one1 = Decimal32::from_data(false, 0, 1);
         let one2 = Decimal32::from_data(false, -1, 10);
         let one3 = Decimal32::from_data(false, -2, 100);
         let one4 = Decimal32::from_data(false, -3, 1000);
-
         assert_eq!(one1, one2);
         assert_eq!(one2, one3);
         assert_eq!(one3, one4);
         assert_eq!(one4, one1);
 
-        let zero1 = Decimal32::from_data(true, 0, 0);
-        let zero2 = Decimal32::from_data(false, 11, 0);
-        let zero3 = Decimal32::from_data(true, 90, 0);
-        let zero4 = Decimal32::from_data(false, -101, 0);
-
-        assert_eq!(zero1, zero2);
-        assert_eq!(zero2, zero3);
-        assert_eq!(zero3, zero4);
-        assert_eq!(zero4, zero1);
+        let hundred1 = Decimal32::from_data(false, 1, 100);
+        let hundred2 = Decimal32::from_data(false, 2, 10);
+        let hundred3 = Decimal32::from_data(false, 3, 1);
+        assert_eq!(hundred1, hundred2);
+        assert_eq!(hundred2, hundred3);
+        assert_eq!(hundred3, hundred1);
     }
 
     #[test]
