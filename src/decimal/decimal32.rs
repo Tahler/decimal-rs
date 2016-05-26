@@ -53,9 +53,15 @@ impl Decimal32 {
     /// Returns Err(String) if either the exponent or significand is out of range.
     pub fn from_data(is_negative: bool, exponent: i32, significand: u32) -> Decimal32 {
         if exponent < MIN_EXPONENT {
-            NEG_INFINITY
+            let (shifted_exponent, shifted_significand) = shift_exponent(significand,
+                                                                         exponent,
+                                                                         MIN_EXPONENT - exponent);
+            Decimal32::from_data(is_negative, shifted_exponent, shifted_significand)
         } else if exponent > MAX_EXPONENT {
-            INFINITY
+            let (shifted_exponent, shifted_significand) = shift_exponent(significand,
+                                                                         exponent,
+                                                                         MAX_EXPONENT - exponent);
+            Decimal32::from_data(is_negative, shifted_exponent, shifted_significand)
         } else if significand > MAX_SIGNIFICAND {
             if is_negative {
                 NEG_INFINITY
@@ -207,13 +213,17 @@ impl Decimal32 {
         let mask = 0b0_00000_000001_11111111111111111111;
         implicit_100 + (self.data & mask)
     }
+}
 
-    fn shift_exponent(&self, factor: i32) -> Decimal32 {
-        let (sign, exponent, significand) = self.get_data();
-        let shifted_exponent = exponent + factor;
-        let shifted_significand = ((significand as f64) * 10f64.powi(-factor)) as u32;
-        Decimal32::from_data(sign, shifted_exponent, shifted_significand)
-    }
+fn shift_exponent(significand: u32, exponent: i32, shift: i32) -> (i32, u32) {
+    let shifted_exponent = exponent + shift;
+    let pow_shift = num::pow(10u32, num::abs(shift) as usize);
+    let shifted_significand = if shift < 0 {
+        significand / pow_shift
+    } else {
+        significand * pow_shift
+    };
+    (shifted_exponent, shifted_significand)
 }
 
 fn to_common_exponent(left: &Decimal32, right: &Decimal32) -> (bool, u32, bool, u32, i32) {
