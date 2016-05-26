@@ -579,6 +579,14 @@ mod test {
         let expected = Decimal32::from_data(false, -101, 0);
         let actual = Decimal32::from_data(false, -102, 1);
         assert_eq!(expected, actual);
+
+        let expected = INFINITY;
+        let actual = Decimal32::from_data(false, 94, 9999999);
+        assert_eq!(expected, actual);
+
+        let expected = NEG_INFINITY;
+        let actual = Decimal32::from_data(true, 94, 9999999);
+        assert_eq!(expected, actual);
     }
 
     #[test]
