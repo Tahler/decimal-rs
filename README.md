@@ -7,8 +7,6 @@ An implementation of the IEEE 754-2008 standard for decimal floating point numbe
 
 If you're looking to help, there are plenty of small pieces that can be worked on. Below is a list:
 
-- Equality
-- Addition / Subtraction
 - Multiplication / Division
   - With floats as well as other decimals
 - Display with alternate formatting
