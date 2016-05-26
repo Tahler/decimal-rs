@@ -10,6 +10,12 @@ use super::parse_decimal_error::ParseDecimalError;
 
 const NUM_DIGITS: u32 = 7;
 
+const MIN_EXPONENT: i32 = -101;
+const MAX_EXPONENT: i32 = 90;
+
+const MIN_SIGNIFICAND: u32 = 0;
+const MAX_SIGNIFICAND: u32 = 9999999;
+
 const SIGN_MASK: u32 = 0b1_00000_000000_00000000000000000000;
 const COMBINATION_MASK: u32 = 0b0_11111_000000_00000000000000000000;
 
@@ -46,11 +52,11 @@ impl Decimal32 {
     ///
     /// Returns Err(String) if either the exponent or significand is out of range.
     pub fn from_data(is_negative: bool, exponent: i32, significand: u32) -> Decimal32 {
-        if exponent < -101 {
+        if exponent < MIN_EXPONENT {
             NEG_INFINITY
-        } else if exponent > 90 {
+        } else if exponent > MAX_EXPONENT {
             INFINITY
-        } else if significand > 9_999_999 {
+        } else if significand > MAX_SIGNIFICAND {
             if is_negative {
                 NEG_INFINITY
             } else {
@@ -62,19 +68,19 @@ impl Decimal32 {
             } else {
                 0
             }) << 31;
-            let stored_exponent = (exponent + 101) as u32;
+            let biased_exponent = (exponent - MIN_EXPONENT) as u32;
 
             let implicit_field;
             let exponent_field;
             let significand_field;
             if significand < 8_388_608 {
                 implicit_field = 0;
-                exponent_field = stored_exponent << 23; // TODO think
+                exponent_field = biased_exponent << 23; // TODO think
                 significand_field = significand;
             } else {
                 // 8,388,608 is the first number that requires the implicit (100) in the significand
                 implicit_field = 0b11 << 29;
-                exponent_field = stored_exponent << 21;
+                exponent_field = biased_exponent << 21;
                 // remove the implicit (100)
                 significand_field = significand - 0b1000_0000_0000_0000_0000_0000;
             }
@@ -129,10 +135,10 @@ impl Decimal32 {
         // on the combination field.
         let sign = self.get_sign_field() != 0;
         let (exponent, significand) = if self.get_first_two_bits_combination_field() < 3 {
-            ((self.get_normal_exponent() as i32) - 101, self.get_normal_significand())
+            ((self.get_normal_exponent() as i32) + MIN_EXPONENT, self.get_normal_significand())
         } else {
             // self.get_second_two_bits_combination_field() < 3
-            ((self.get_shifted_exponent() as i32) - 101, self.get_shifted_significand())
+            ((self.get_shifted_exponent() as i32) + MIN_EXPONENT, self.get_shifted_significand())
         };
         (sign, exponent, significand)
     }
@@ -147,7 +153,7 @@ impl Decimal32 {
             // self.get_second_two_bits_combination_field() < 3
             self.get_shifted_exponent()
         };
-        (exponent as i32) - 101
+        (exponent as i32) + MIN_EXPONENT
     }
 
     /// Returns this Decimal32's significand value.
