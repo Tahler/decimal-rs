@@ -221,9 +221,9 @@ fn shift_exponent(significand: u32, exponent: i32, shift: i32) -> (i32, u32) {
     let shifted_exponent = exponent + shift;
     let pow_shift = num::pow(10u32, num::abs(shift) as usize);
     let shifted_significand = if shift < 0 {
-        significand / pow_shift
-    } else {
         significand * pow_shift
+    } else {
+        significand / pow_shift
     };
     (shifted_exponent, shifted_significand)
 }
@@ -559,8 +559,26 @@ mod test {
     }
 
     #[test]
-    fn from_data() {
-        // let expected = Decimal32::from_data(false, );
+    fn from_data_overflow() {
+        let expected = Decimal32::from_data(false, 90, 10);
+        let actual = Decimal32::from_data(false, 91, 1);
+        assert_eq!(expected, actual);
+
+        let expected = Decimal32::from_data(false, 90, 1090000);
+        let actual = Decimal32::from_data(false, 94, 109);
+        assert_eq!(expected, actual);
+
+        let expected = Decimal32::from_data(false, -101, 1);
+        let actual = Decimal32::from_data(false, -102, 10);
+        assert_eq!(expected, actual);
+
+        let expected = Decimal32::from_data(true, -101, 1);
+        let actual = Decimal32::from_data(true, -102, 10);
+        assert_eq!(expected, actual);
+
+        let expected = Decimal32::from_data(false, -101, 0);
+        let actual = Decimal32::from_data(false, -102, 1);
+        assert_eq!(expected, actual);
     }
 
     #[test]
