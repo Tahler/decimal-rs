@@ -440,10 +440,14 @@ impl Rem<Decimal32> for Decimal32 {
 
 impl PartialEq for Decimal32 {
     fn eq(&self, other: &Decimal32) -> bool {
+        if self.is_zero() && other.is_zero() {
+            return true;
+        }
         if self.get_sign_field() != other.get_sign_field() {
             return false;
         }
         if self.is_infinity() && other.is_infinity() {
+            assert_eq!(self.get_sign_field(), other.get_sign_field());
             return true;
         }
         if self.is_nan() && other.is_nan() {
@@ -538,9 +542,9 @@ mod test {
         assert_eq!(one3, one4);
         assert_eq!(one4, one1);
 
-        let zero1 = Decimal32::from_data(false, 0, 0);
+        let zero1 = Decimal32::from_data(true, 0, 0);
         let zero2 = Decimal32::from_data(false, 11, 0);
-        let zero3 = Decimal32::from_data(false, 90, 0);
+        let zero3 = Decimal32::from_data(true, 90, 0);
         let zero4 = Decimal32::from_data(false, -101, 0);
 
         assert_eq!(zero1, zero2);
@@ -551,7 +555,7 @@ mod test {
 
     #[test]
     fn from_data() {
-        // let expected =
+        // let expected = Decimal32::from_data(false, );
     }
 
     #[test]
