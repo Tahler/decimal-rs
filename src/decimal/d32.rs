@@ -25,45 +25,45 @@ const COMBINATION_MASK: u32 = 0b0_11111_000000_00000000000000000000;
 /// Decimal32 supports 7 decimal digits of significand and an exponent range of −95 to +96, i.e.
 /// ±0.000000×10^−95 to ±9.999999×10^96. (Equivalently, ±0000000×10^−101 to ±9999999×10^90.)
 #[derive(Clone, Copy)]
-pub struct Decimal32 {
+pub struct d32 {
     data: u32,
 }
 
-pub const ZERO: Decimal32 = Decimal32 { data: 0b0_01100101_00000000000000000000000 };
-pub const ONE: Decimal32 = Decimal32 { data: 0b0_01100101_00000000000000000000001 };
+pub const ZERO: d32 = d32 { data: 0b0_01100101_00000000000000000000000 };
+pub const ONE: d32 = d32 { data: 0b0_01100101_00000000000000000000001 };
 
-pub const MAX_VALUE: Decimal32 = Decimal32 { data: 0b0_11_10111111_110001001011001111111 };
-pub const MIN_VALUE: Decimal32 = Decimal32 { data: 0b1_11_10111111_110001001011001111111 };
+pub const MAX_VALUE: d32 = d32 { data: 0b0_11_10111111_110001001011001111111 };
+pub const MIN_VALUE: d32 = d32 { data: 0b1_11_10111111_110001001011001111111 };
 
-pub const INFINITY: Decimal32 = Decimal32 { data: 0b0_11110_000000_00000000000000000000 };
-pub const NEG_INFINITY: Decimal32 = Decimal32 { data: 0b1_11110_000000_00000000000000000000 };
-pub const QNAN: Decimal32 = Decimal32 { data: 0b0_11111_000000_00000000000000000000 };
-pub const SNAN: Decimal32 = Decimal32 { data: 0b0_11111_100000_00000000000000000000 };
-pub const NAN: Decimal32 = QNAN;
+pub const INFINITY: d32 = d32 { data: 0b0_11110_000000_00000000000000000000 };
+pub const NEG_INFINITY: d32 = d32 { data: 0b1_11110_000000_00000000000000000000 };
+pub const QNAN: d32 = d32 { data: 0b0_11111_000000_00000000000000000000 };
+pub const SNAN: d32 = d32 { data: 0b0_11111_100000_00000000000000000000 };
+pub const NAN: d32 = QNAN;
 
-impl Decimal32 {
-    /// Creates and initializes a Decimal32 representation of zero.
-    pub fn new() -> Decimal32 {
-        Decimal32::zero()
+impl d32 {
+    /// Creates and initializes a d32 representation of zero.
+    pub fn new() -> d32 {
+        d32::zero()
     }
 
-    /// Creates and initialize a Decimal32 from its significant parts: the sign, exponent, and
+    /// Creates and initialize a decimal32 from its significant parts: the sign, exponent, and
     /// significand, respectively.
     ///
     /// If the exponent is out of range (less than -101 or greater than 90), the data will be
     /// shifted in an attempt to be fit into the 32-bit representation. If the shifted components
     /// still do not fit, the result may end in an "unexpected" value (i.e. ±infinity or zero)
-    pub fn from_data(is_negative: bool, exponent: i32, significand: u32) -> Decimal32 {
+    pub fn from_data(is_negative: bool, exponent: i32, significand: u32) -> d32 {
         if exponent < MIN_EXPONENT {
             let (shifted_exponent, shifted_significand) = shift_exponent(significand,
                                                                          exponent,
                                                                          MIN_EXPONENT - exponent);
-            Decimal32::from_data(is_negative, shifted_exponent, shifted_significand)
+            d32::from_data(is_negative, shifted_exponent, shifted_significand)
         } else if exponent > MAX_EXPONENT {
             let (shifted_exponent, shifted_significand) = shift_exponent(significand,
                                                                          exponent,
                                                                          MAX_EXPONENT - exponent);
-            Decimal32::from_data(is_negative, shifted_exponent, shifted_significand)
+            d32::from_data(is_negative, shifted_exponent, shifted_significand)
         } else if significand > MAX_SIGNIFICAND {
             if is_negative {
                 NEG_INFINITY
@@ -92,13 +92,13 @@ impl Decimal32 {
                 // remove the implicit (100)
                 significand_field = significand - 0b1000_0000_0000_0000_0000_0000;
             }
-            Decimal32 { data: sign_field + implicit_field + exponent_field + significand_field }
+            d32 { data: sign_field + implicit_field + exponent_field + significand_field }
         }
     }
 
-    /// Returns a Decimal32 with the exact bits passed in through `data`.
-    pub fn from_bin(data: u32) -> Decimal32 {
-        Decimal32 { data: data }
+    /// Returns a d32 with the exact bits passed in through `data`.
+    pub fn from_bin(data: u32) -> d32 {
+        d32 { data: data }
     }
 
     pub fn to_f64(&self) -> f64 {
@@ -151,7 +151,7 @@ impl Decimal32 {
         (sign, exponent, significand)
     }
 
-    /// Returns this Decimal32's exponent value.
+    /// Returns this d32's exponent value.
     ///
     /// Do not expect well-behaved results if this decimal is NaN or infinity.
     pub fn get_exponent(&self) -> i32 {
@@ -164,7 +164,7 @@ impl Decimal32 {
         (exponent as i32) + MIN_EXPONENT
     }
 
-    /// Returns this Decimal32's significand value.
+    /// Returns this d32's significand value.
     ///
     /// Do not expect well-behaved results if this decimal is NaN or infinity.
     pub fn get_significand(&self) -> u32 {
@@ -228,7 +228,7 @@ fn shift_exponent(significand: u32, exponent: i32, shift: i32) -> (i32, u32) {
     (shifted_exponent, shifted_significand)
 }
 
-fn to_common_exponent(left: &Decimal32, right: &Decimal32) -> (bool, u32, bool, u32, i32) {
+fn to_common_exponent(left: &d32, right: &d32) -> (bool, u32, bool, u32, i32) {
     use std::cmp::Ordering;
 
     let (left_neg, left_exponent, left_significand) = left.get_data();
@@ -248,25 +248,25 @@ fn to_common_exponent(left: &Decimal32, right: &Decimal32) -> (bool, u32, bool, 
     }
 }
 
-impl Default for Decimal32 {
-    fn default() -> Decimal32 {
-        Decimal32::zero()
+impl Default for d32 {
+    fn default() -> d32 {
+        d32::zero()
     }
 }
 
-impl fmt::Debug for Decimal32 {
+impl fmt::Debug for d32 {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         let debug_str = if self.is_infinity() {
             if self.is_positive() {
-                "Decimal32::INFINITY".to_string()
+                "d32::INFINITY".to_string()
             } else {
-                "Decimal32::NEG_INFINITY".to_string()
+                "d32::NEG_INFINITY".to_string()
             }
         } else if self.is_nan() {
-            "Decimal32::NAN".to_string()
+            "d32::NAN".to_string()
         } else {
             let (is_negative, exponent, significand) = self.get_data();
-            format!("Decimal32 {{ is_negative: {}, exponent: {}, significand: {} }}",
+            format!("d32 {{ is_negative: {}, exponent: {}, significand: {} }}",
                     is_negative,
                     exponent,
                     significand)
@@ -284,7 +284,7 @@ impl fmt::Debug for Decimal32 {
 //     Some(precision) => precision,
 //     None => 0
 // };
-impl fmt::Display for Decimal32 {
+impl fmt::Display for d32 {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         use super::super::zero_pad::{pad_right, pad_left};
 
@@ -316,22 +316,22 @@ impl fmt::Display for Decimal32 {
     }
 }
 
-impl fmt::LowerExp for Decimal32 {
+impl fmt::LowerExp for d32 {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         unimplemented!()
     }
 }
 
-impl fmt::UpperExp for Decimal32 {
+impl fmt::UpperExp for d32 {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         unimplemented!()
     }
 }
 
-impl Add<Decimal32> for Decimal32 {
-    type Output = Decimal32;
+impl Add<d32> for d32 {
+    type Output = d32;
 
-    fn add(self, other: Decimal32) -> Decimal32 {
+    fn add(self, other: d32) -> d32 {
         if self.is_nan() || other.is_nan() {
             // if either operand is NaN, so is the result
             NAN
@@ -393,53 +393,53 @@ impl Add<Decimal32> for Decimal32 {
             let signed_sum_significand: i32 = signed_left_significand + signed_right_significand;
             let sum_is_negative = signed_sum_significand < 0;
             let unsigned_sum_significand = num::abs(signed_sum_significand) as u32;
-            Decimal32::from_data(sum_is_negative, exponent, unsigned_sum_significand)
+            d32::from_data(sum_is_negative, exponent, unsigned_sum_significand)
         }
     }
 }
 
-impl Sub<Decimal32> for Decimal32 {
-    type Output = Decimal32;
+impl Sub<d32> for d32 {
+    type Output = d32;
 
-    fn sub(self, other: Decimal32) -> Decimal32 {
+    fn sub(self, other: d32) -> d32 {
         self // TODO
     }
 }
 
-impl Mul<Decimal32> for Decimal32 {
-    type Output = Decimal32;
+impl Mul<d32> for d32 {
+    type Output = d32;
 
-    fn mul(self, other: Decimal32) -> Decimal32 {
+    fn mul(self, other: d32) -> d32 {
         self // TODO
     }
 }
 
-impl Div<Decimal32> for Decimal32 {
-    type Output = Decimal32;
+impl Div<d32> for d32 {
+    type Output = d32;
 
-    fn div(self, other: Decimal32) -> Decimal32 {
+    fn div(self, other: d32) -> d32 {
         self // TODO
     }
 }
 
-impl Neg for Decimal32 {
-    type Output = Decimal32;
+impl Neg for d32 {
+    type Output = d32;
 
-    fn neg(self) -> Decimal32 {
-        Decimal32 { data: self.data ^ 1 << 31 }
+    fn neg(self) -> d32 {
+        d32 { data: self.data ^ 1 << 31 }
     }
 }
 
-impl Rem<Decimal32> for Decimal32 {
-    type Output = Decimal32;
+impl Rem<d32> for d32 {
+    type Output = d32;
 
-    fn rem(self, other: Decimal32) -> Decimal32 {
+    fn rem(self, other: d32) -> d32 {
         self // TODO
     }
 }
 
-impl PartialEq for Decimal32 {
-    fn eq(&self, other: &Decimal32) -> bool {
+impl PartialEq for d32 {
+    fn eq(&self, other: &d32) -> bool {
         if self.is_zero() && other.is_zero() {
             return true;
         }
@@ -459,16 +459,16 @@ impl PartialEq for Decimal32 {
     }
 }
 
-impl Num for Decimal32 {
+impl Num for d32 {
     type FromStrRadixErr = ParseDecimalError;
 
     fn from_str_radix(s: &str, radix: u32) -> Result<Self, Self::FromStrRadixErr> {
-        Ok(Decimal32::zero()) // TODO
+        Ok(d32::zero()) // TODO
     }
 }
 
-impl Zero for Decimal32 {
-    fn zero() -> Decimal32 {
+impl Zero for d32 {
+    fn zero() -> d32 {
         ZERO
     }
 
@@ -477,20 +477,20 @@ impl Zero for Decimal32 {
     }
 }
 
-impl One for Decimal32 {
-    fn one() -> Decimal32 {
+impl One for d32 {
+    fn one() -> d32 {
         ONE
     }
 }
 
-impl Signed for Decimal32 {
+impl Signed for d32 {
     /// Returns the absolute value of this decimal, by returning a copy of this decimal with the
     /// sign bit turned off.
-    fn abs(&self) -> Decimal32 {
-        Decimal32 { data: self.data & (!SIGN_MASK) }
+    fn abs(&self) -> d32 {
+        d32 { data: self.data & (!SIGN_MASK) }
     }
 
-    fn abs_sub(&self, other: &Decimal32) -> Decimal32 {
+    fn abs_sub(&self, other: &d32) -> d32 {
         // TODO
         // The positive difference of two numbers.
         // Returns zero if the number is less than or equal to other, otherwise the difference between self and other is returned.
@@ -502,13 +502,13 @@ impl Signed for Decimal32 {
     /// - 1.0 if the decimal is positive, +0.0 or INFINITY.
     /// - -1.0 if the decimal is negative, -0.0 or -INFINITY.
     /// - NaN if the decimal is NaN.
-    fn signum(&self) -> Decimal32 {
+    fn signum(&self) -> d32 {
         if self.is_nan() {
             self.clone()
         } else if self.is_positive() {
-            Decimal32::one()
+            d32::one()
         } else {
-            -Decimal32::one()
+            -d32::one()
         }
     }
 
@@ -532,27 +532,27 @@ mod test {
 
     #[test]
     fn eq() {
-        let zero1 = Decimal32::from_data(true, 0, 0);
-        let zero2 = Decimal32::from_data(false, 11, 0);
-        let zero3 = Decimal32::from_data(true, 90, 0);
-        let zero4 = Decimal32::from_data(false, -101, 0);
+        let zero1 = d32::from_data(true, 0, 0);
+        let zero2 = d32::from_data(false, 11, 0);
+        let zero3 = d32::from_data(true, 90, 0);
+        let zero4 = d32::from_data(false, -101, 0);
         assert_eq!(zero1, zero2);
         assert_eq!(zero2, zero3);
         assert_eq!(zero3, zero4);
         assert_eq!(zero4, zero1);
 
-        let one1 = Decimal32::from_data(false, 0, 1);
-        let one2 = Decimal32::from_data(false, -1, 10);
-        let one3 = Decimal32::from_data(false, -2, 100);
-        let one4 = Decimal32::from_data(false, -3, 1000);
+        let one1 = d32::from_data(false, 0, 1);
+        let one2 = d32::from_data(false, -1, 10);
+        let one3 = d32::from_data(false, -2, 100);
+        let one4 = d32::from_data(false, -3, 1000);
         assert_eq!(one1, one2);
         assert_eq!(one2, one3);
         assert_eq!(one3, one4);
         assert_eq!(one4, one1);
 
-        let hundred1 = Decimal32::from_data(false, 1, 100);
-        let hundred2 = Decimal32::from_data(false, 2, 10);
-        let hundred3 = Decimal32::from_data(false, 3, 1);
+        let hundred1 = d32::from_data(false, 1, 100);
+        let hundred2 = d32::from_data(false, 2, 10);
+        let hundred3 = d32::from_data(false, 3, 1);
         assert_eq!(hundred1, hundred2);
         assert_eq!(hundred2, hundred3);
         assert_eq!(hundred3, hundred1);
@@ -560,38 +560,38 @@ mod test {
 
     #[test]
     fn from_data_overflow() {
-        let expected = Decimal32::from_data(false, 90, 10);
-        let actual = Decimal32::from_data(false, 91, 1);
+        let expected = d32::from_data(false, 90, 10);
+        let actual = d32::from_data(false, 91, 1);
         assert_eq!(expected, actual);
 
-        let expected = Decimal32::from_data(false, 90, 1090000);
-        let actual = Decimal32::from_data(false, 94, 109);
+        let expected = d32::from_data(false, 90, 1090000);
+        let actual = d32::from_data(false, 94, 109);
         assert_eq!(expected, actual);
 
-        let expected = Decimal32::from_data(false, -101, 1);
-        let actual = Decimal32::from_data(false, -102, 10);
+        let expected = d32::from_data(false, -101, 1);
+        let actual = d32::from_data(false, -102, 10);
         assert_eq!(expected, actual);
 
-        let expected = Decimal32::from_data(true, -101, 1);
-        let actual = Decimal32::from_data(true, -102, 10);
+        let expected = d32::from_data(true, -101, 1);
+        let actual = d32::from_data(true, -102, 10);
         assert_eq!(expected, actual);
 
-        let expected = Decimal32::from_data(false, -101, 0);
-        let actual = Decimal32::from_data(false, -102, 1);
+        let expected = d32::from_data(false, -101, 0);
+        let actual = d32::from_data(false, -102, 1);
         assert_eq!(expected, actual);
 
         let expected = INFINITY;
-        let actual = Decimal32::from_data(false, 94, 9999999);
+        let actual = d32::from_data(false, 94, 9999999);
         assert_eq!(expected, actual);
 
         let expected = NEG_INFINITY;
-        let actual = Decimal32::from_data(true, 94, 9999999);
+        let actual = d32::from_data(true, 94, 9999999);
         assert_eq!(expected, actual);
     }
 
     #[test]
     fn get_exponent() {
-        let zero = Decimal32 {
+        let zero = d32 {
             // 101 => 0b0110_0101
             data: 0b0_01100101_00000000000000000000000,
         };
@@ -599,7 +599,7 @@ mod test {
         let actual = zero.get_exponent();
         assert_eq!(expected, actual);
 
-        let one = Decimal32 {
+        let one = d32 {
             // 102 => 0b0110_0110
             data: 0b0_01100110_00000000000000000000000,
         };
@@ -607,7 +607,7 @@ mod test {
         let actual = one.get_exponent();
         assert_eq!(expected, actual);
 
-        let neg_one = Decimal32 {
+        let neg_one = d32 {
             // 100 => 0b0110_0101
             data: 0b0_01100100_00000000000000000000000,
         };
@@ -615,7 +615,7 @@ mod test {
         let actual = neg_one.get_exponent();
         assert_eq!(expected, actual);
 
-        let ninety = Decimal32 {
+        let ninety = d32 {
             // 100 => 0b0110_0101
             data: 0b0_10111111_00000000000000000000000,
         };
@@ -623,7 +623,7 @@ mod test {
         let actual = ninety.get_exponent();
         assert_eq!(expected, actual);
 
-        let neg_101 = Decimal32 {
+        let neg_101 = d32 {
             // 0 => 0b0000_0000
             data: 0b0_00000000_00000000000000000000000,
         };
@@ -631,7 +631,7 @@ mod test {
         let actual = neg_101.get_exponent();
         assert_eq!(expected, actual);
 
-        let alternate = Decimal32 {
+        let alternate = d32 {
             // 64 => 0b0100_0000
             data: 0b0_11_01000000_000000000000000000000,
         };
@@ -642,17 +642,17 @@ mod test {
 
     #[test]
     fn get_significand() {
-        let zero = Decimal32 { data: 0b0_0000000_00000000000000000000000 };
+        let zero = d32 { data: 0b0_0000000_00000000000000000000000 };
         let expected = 0;
         let actual = zero.get_significand();
         assert_eq!(expected, actual);
 
-        let one = Decimal32 { data: 0b0_0000000_00000000000000000000001 };
+        let one = d32 { data: 0b0_0000000_00000000000000000000001 };
         let expected = 1;
         let actual = one.get_significand();
         assert_eq!(expected, actual);
 
-        let eighty = Decimal32 {
+        let eighty = d32 {
             // 80 => 0b0101_0000
             data: 0b0_00000000_00000000000000001010000,
         };
@@ -660,12 +660,12 @@ mod test {
         let actual = eighty.get_significand();
         assert_eq!(expected, actual);
 
-        let first_24th_bit = Decimal32 { data: 0b0_11_00000000_000000000000000000000 };
+        let first_24th_bit = d32 { data: 0b0_11_00000000_000000000000000000000 };
         let expected = 8388608;
         let actual = first_24th_bit.get_significand();
         assert_eq!(expected, actual);
 
-        let max = Decimal32 { data: 0b0_11_00000000_110001001011001111111 };
+        let max = d32 { data: 0b0_11_00000000_110001001011001111111 };
         let expected = 9_999_999;
         let actual = max.get_significand();
         assert_eq!(expected, actual);
@@ -673,37 +673,37 @@ mod test {
 
     #[test]
     fn fmt() {
-        let no_change = Decimal32::from_data(false, 0, 1234567);
+        let no_change = d32::from_data(false, 0, 1234567);
         let expected = "1234567".to_string();
         let actual = format!("{}", no_change);
         assert_eq!(expected, actual);
 
-        let shift_left_one = Decimal32::from_data(false, 1, 1234567);
+        let shift_left_one = d32::from_data(false, 1, 1234567);
         let expected = "12345670".to_string();
         let actual = format!("{}", shift_left_one);
         assert_eq!(expected, actual);
 
-        let neg_shift_left_one = Decimal32::from_data(true, 1, 1234567);
+        let neg_shift_left_one = d32::from_data(true, 1, 1234567);
         let expected = "-12345670".to_string();
         let actual = format!("{}", neg_shift_left_one);
         assert_eq!(expected, actual);
 
-        let shift_right_one = Decimal32::from_data(false, -1, 1234567);
+        let shift_right_one = d32::from_data(false, -1, 1234567);
         let expected = "123456.7".to_string();
         let actual = format!("{}", shift_right_one);
         assert_eq!(expected, actual);
 
-        let shift_right_four = Decimal32::from_data(false, -4, 12345);
+        let shift_right_four = d32::from_data(false, -4, 12345);
         let expected = "1.2345".to_string();
         let actual = format!("{}", shift_right_four);
         assert_eq!(expected, actual);
 
-        let shift_right_seven = Decimal32::from_data(false, -7, 1234567);
+        let shift_right_seven = d32::from_data(false, -7, 1234567);
         let expected = "0.1234567".to_string();
         let actual = format!("{}", shift_right_seven);
         assert_eq!(expected, actual);
 
-        let shift_right_ten = Decimal32::from_data(false, -10, 1234);
+        let shift_right_ten = d32::from_data(false, -10, 1234);
         let expected = "0.0000001234".to_string();
         let actual = format!("{}", shift_right_ten);
         assert_eq!(expected, actual);
@@ -719,13 +719,13 @@ mod test {
 
         assert_eq!(one, zero + one);
 
-        let two1 = Decimal32::from_data(false, -1, 20);
+        let two1 = d32::from_data(false, -1, 20);
         assert_eq!(two1, one + one);
 
-        let two2 = Decimal32::from_data(false, -2, 200);
+        let two2 = d32::from_data(false, -2, 200);
         assert_eq!(two2, one + one);
 
-        let eighteen = Decimal32::from_data(false, -2, 1800);
+        let eighteen = d32::from_data(false, -2, 1800);
         let mut sum = ZERO;
         for _ in 0..18 {
             sum = sum + one;
