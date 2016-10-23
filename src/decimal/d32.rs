@@ -527,74 +527,6 @@ mod test {
     use super::*;
 
     #[test]
-    fn eq() {
-        let zero1 = d32::from_data(true, 0, 0);
-        let zero2 = d32::from_data(false, 11, 0);
-        let zero3 = d32::from_data(true, 90, 0);
-        let zero4 = d32::from_data(false, -101, 0);
-        assert_eq!(zero1, zero2);
-        assert_eq!(zero2, zero3);
-        assert_eq!(zero3, zero4);
-        assert_eq!(zero4, zero1);
-
-        let one1 = d32::from_data(false, 0, 1);
-        let one2 = d32::from_data(false, -1, 10);
-        let one3 = d32::from_data(false, -2, 100);
-        let one4 = d32::from_data(false, -3, 1000);
-        assert_eq!(one1, one2);
-        assert_eq!(one2, one3);
-        assert_eq!(one3, one4);
-        assert_eq!(one4, one1);
-
-        let hundred1 = d32::from_data(false, 1, 100);
-        let hundred2 = d32::from_data(false, 2, 10);
-        let hundred3 = d32::from_data(false, 3, 1);
-        assert_eq!(hundred1, hundred2);
-        assert_eq!(hundred2, hundred3);
-        assert_eq!(hundred3, hundred1);
-
-        let nan = consts::NAN;
-        assert!(nan != nan);
-
-        let pos_infinity = consts::INFINITY;
-        assert_eq!(pos_infinity, pos_infinity);
-
-        let neg_infinity = consts::NEG_INFINITY;
-        assert_eq!(neg_infinity, neg_infinity);
-    }
-
-    #[test]
-    fn from_data_overflow() {
-        let expected = d32::from_data(false, 90, 10);
-        let actual = d32::from_data(false, 91, 1);
-        assert_eq!(expected, actual);
-
-        let expected = d32::from_data(false, 90, 1090000);
-        let actual = d32::from_data(false, 94, 109);
-        assert_eq!(expected, actual);
-
-        let expected = d32::from_data(false, -101, 1);
-        let actual = d32::from_data(false, -102, 10);
-        assert_eq!(expected, actual);
-
-        let expected = d32::from_data(true, -101, 1);
-        let actual = d32::from_data(true, -102, 10);
-        assert_eq!(expected, actual);
-
-        let expected = d32::from_data(false, -101, 0);
-        let actual = d32::from_data(false, -102, 1);
-        assert_eq!(expected, actual);
-
-        let expected = consts::INFINITY;
-        let actual = d32::from_data(false, 94, 9999999);
-        assert_eq!(expected, actual);
-
-        let expected = consts::NEG_INFINITY;
-        let actual = d32::from_data(true, 94, 9999999);
-        assert_eq!(expected, actual);
-    }
-
-    #[test]
     fn get_exponent() {
         let zero = d32 {
             // 101 => 0b0110_0101
@@ -677,40 +609,70 @@ mod test {
     }
 
     #[test]
-    fn fmt() {
-        let no_change = d32::from_data(false, 0, 1234567);
-        let expected = "1234567".to_string();
-        let actual = format!("{}", no_change);
+    fn eq() {
+        let zero1 = d32::from_data(true, 0, 0);
+        let zero2 = d32::from_data(false, 11, 0);
+        let zero3 = d32::from_data(true, 90, 0);
+        let zero4 = d32::from_data(false, -101, 0);
+        assert_eq!(zero1, zero2);
+        assert_eq!(zero2, zero3);
+        assert_eq!(zero3, zero4);
+        assert_eq!(zero4, zero1);
+
+        let one1 = d32::from_data(false, 0, 1);
+        let one2 = d32::from_data(false, -1, 10);
+        let one3 = d32::from_data(false, -2, 100);
+        let one4 = d32::from_data(false, -3, 1000);
+        assert_eq!(one1, one2);
+        assert_eq!(one2, one3);
+        assert_eq!(one3, one4);
+        assert_eq!(one4, one1);
+
+        let hundred1 = d32::from_data(false, 1, 100);
+        let hundred2 = d32::from_data(false, 2, 10);
+        let hundred3 = d32::from_data(false, 3, 1);
+        assert_eq!(hundred1, hundred2);
+        assert_eq!(hundred2, hundred3);
+        assert_eq!(hundred3, hundred1);
+
+        let nan = consts::NAN;
+        assert!(nan != nan);
+
+        let pos_infinity = consts::INFINITY;
+        assert_eq!(pos_infinity, pos_infinity);
+
+        let neg_infinity = consts::NEG_INFINITY;
+        assert_eq!(neg_infinity, neg_infinity);
+    }
+
+    #[test]
+    fn from_data_overflow() {
+        let expected = d32::from_data(false, 90, 10);
+        let actual = d32::from_data(false, 91, 1);
         assert_eq!(expected, actual);
 
-        let shift_left_one = d32::from_data(false, 1, 1234567);
-        let expected = "12345670".to_string();
-        let actual = format!("{}", shift_left_one);
+        let expected = d32::from_data(false, 90, 1090000);
+        let actual = d32::from_data(false, 94, 109);
         assert_eq!(expected, actual);
 
-        let neg_shift_left_one = d32::from_data(true, 1, 1234567);
-        let expected = "-12345670".to_string();
-        let actual = format!("{}", neg_shift_left_one);
+        let expected = d32::from_data(false, -101, 1);
+        let actual = d32::from_data(false, -102, 10);
         assert_eq!(expected, actual);
 
-        let shift_right_one = d32::from_data(false, -1, 1234567);
-        let expected = "123456.7".to_string();
-        let actual = format!("{}", shift_right_one);
+        let expected = d32::from_data(true, -101, 1);
+        let actual = d32::from_data(true, -102, 10);
         assert_eq!(expected, actual);
 
-        let shift_right_four = d32::from_data(false, -4, 12345);
-        let expected = "1.2345".to_string();
-        let actual = format!("{}", shift_right_four);
+        let expected = d32::from_data(false, -101, 0);
+        let actual = d32::from_data(false, -102, 1);
         assert_eq!(expected, actual);
 
-        let shift_right_seven = d32::from_data(false, -7, 1234567);
-        let expected = "0.1234567".to_string();
-        let actual = format!("{}", shift_right_seven);
+        let expected = consts::INFINITY;
+        let actual = d32::from_data(false, 94, 9999999);
         assert_eq!(expected, actual);
 
-        let shift_right_ten = d32::from_data(false, -10, 1234);
-        let expected = "0.0000001234".to_string();
-        let actual = format!("{}", shift_right_ten);
+        let expected = consts::NEG_INFINITY;
+        let actual = d32::from_data(true, 94, 9999999);
         assert_eq!(expected, actual);
     }
 
@@ -750,5 +712,43 @@ mod test {
         assert!((nan + zero).is_nan());
         assert!((nan + one).is_nan());
         assert!((nan + nan).is_nan());
+    }
+
+        #[test]
+    fn fmt() {
+        let no_change = d32::from_data(false, 0, 1234567);
+        let expected = "1234567".to_string();
+        let actual = format!("{}", no_change);
+        assert_eq!(expected, actual);
+
+        let shift_left_one = d32::from_data(false, 1, 1234567);
+        let expected = "12345670".to_string();
+        let actual = format!("{}", shift_left_one);
+        assert_eq!(expected, actual);
+
+        let neg_shift_left_one = d32::from_data(true, 1, 1234567);
+        let expected = "-12345670".to_string();
+        let actual = format!("{}", neg_shift_left_one);
+        assert_eq!(expected, actual);
+
+        let shift_right_one = d32::from_data(false, -1, 1234567);
+        let expected = "123456.7".to_string();
+        let actual = format!("{}", shift_right_one);
+        assert_eq!(expected, actual);
+
+        let shift_right_four = d32::from_data(false, -4, 12345);
+        let expected = "1.2345".to_string();
+        let actual = format!("{}", shift_right_four);
+        assert_eq!(expected, actual);
+
+        let shift_right_seven = d32::from_data(false, -7, 1234567);
+        let expected = "0.1234567".to_string();
+        let actual = format!("{}", shift_right_seven);
+        assert_eq!(expected, actual);
+
+        let shift_right_ten = d32::from_data(false, -10, 1234);
+        let expected = "0.0000001234".to_string();
+        let actual = format!("{}", shift_right_ten);
+        assert_eq!(expected, actual);
     }
 }
