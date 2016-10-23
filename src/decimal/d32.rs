@@ -26,19 +26,19 @@ const COMBINATION_MASK: u32 = 0b0_11111_000000_00000000000000000000;
 /// ±0.000000×10^−95 to ±9.999999×10^96. (Equivalently, ±0000000×10^−101 to ±9999999×10^90.)
 #[derive(Clone, Copy)]
 pub struct d32 {
-    data: u32,
+    bits: u32,
 }
 
-pub const ZERO: d32 = d32 { data: 0b0_01100101_00000000000000000000000 };
-pub const ONE: d32 = d32 { data: 0b0_01100101_00000000000000000000001 };
+pub const ZERO: d32 = d32 { bits: 0b0_01100101_00000000000000000000000 };
+pub const ONE: d32 = d32 { bits: 0b0_01100101_00000000000000000000001 };
 
-pub const MAX_VALUE: d32 = d32 { data: 0b0_11_10111111_110001001011001111111 };
-pub const MIN_VALUE: d32 = d32 { data: 0b1_11_10111111_110001001011001111111 };
+pub const MAX_VALUE: d32 = d32 { bits: 0b0_11_10111111_110001001011001111111 };
+pub const MIN_VALUE: d32 = d32 { bits: 0b1_11_10111111_110001001011001111111 };
 
-pub const INFINITY: d32 = d32 { data: 0b0_11110_000000_00000000000000000000 };
-pub const NEG_INFINITY: d32 = d32 { data: 0b1_11110_000000_00000000000000000000 };
-pub const QNAN: d32 = d32 { data: 0b0_11111_000000_00000000000000000000 };
-pub const SNAN: d32 = d32 { data: 0b0_11111_100000_00000000000000000000 };
+pub const INFINITY: d32 = d32 { bits: 0b0_11110_000000_00000000000000000000 };
+pub const NEG_INFINITY: d32 = d32 { bits: 0b1_11110_000000_00000000000000000000 };
+pub const QNAN: d32 = d32 { bits: 0b0_11111_000000_00000000000000000000 };
+pub const SNAN: d32 = d32 { bits: 0b0_11111_100000_00000000000000000000 };
 pub const NAN: d32 = QNAN;
 
 impl d32 {
@@ -92,13 +92,13 @@ impl d32 {
                 // remove the implicit (100)
                 significand_field = significand - 0b1000_0000_0000_0000_0000_0000;
             }
-            d32 { data: sign_field + implicit_field + exponent_field + significand_field }
+            d32 { bits: sign_field + implicit_field + exponent_field + significand_field }
         }
     }
 
     /// Returns a d32 with the exact bits passed in through `data`.
     pub fn from_bin(data: u32) -> d32 {
-        d32 { data: data }
+        d32 { bits: data }
     }
 
     pub fn to_f64(&self) -> f64 {
@@ -177,11 +177,11 @@ impl d32 {
     }
 
     fn get_sign_field(&self) -> u32 {
-        (self.data & SIGN_MASK) >> 31
+        (self.bits & SIGN_MASK) >> 31
     }
 
     fn get_combination_field(&self) -> u32 {
-        (self.data & COMBINATION_MASK) >> 26
+        (self.bits & COMBINATION_MASK) >> 26
     }
 
     fn get_first_two_bits_combination_field(&self) -> u32 {
@@ -197,23 +197,23 @@ impl d32 {
 
     fn get_normal_exponent(&self) -> u32 {
         let mask: u32 = 0b0_11111_111000_00000000000000000000;
-        (self.data & mask) >> 23
+        (self.bits & mask) >> 23
     }
 
     fn get_shifted_exponent(&self) -> u32 {
         let mask: u32 = 0b0_00111_111110_00000000000000000000;
-        (self.data & mask) >> 21
+        (self.bits & mask) >> 21
     }
 
     fn get_normal_significand(&self) -> u32 {
         let mask = 0b0_00000_000111_11111111111111111111;
-        self.data & mask
+        self.bits & mask
     }
 
     fn get_shifted_significand(&self) -> u32 {
         let implicit_100 = 0b100_0_00000_00000_00000_00000;
         let mask = 0b0_00000_000001_11111111111111111111;
-        implicit_100 + (self.data & mask)
+        implicit_100 + (self.bits & mask)
     }
 }
 
@@ -426,7 +426,7 @@ impl Neg for d32 {
     type Output = d32;
 
     fn neg(self) -> d32 {
-        d32 { data: self.data ^ 1 << 31 }
+        d32 { bits: self.bits ^ 1 << 31 }
     }
 }
 
@@ -487,7 +487,7 @@ impl Signed for d32 {
     /// Returns the absolute value of this decimal, by returning a copy of this decimal with the
     /// sign bit turned off.
     fn abs(&self) -> d32 {
-        d32 { data: self.data & (!SIGN_MASK) }
+        d32 { bits: self.bits & (!SIGN_MASK) }
     }
 
     fn abs_sub(&self, other: &d32) -> d32 {
@@ -593,7 +593,7 @@ mod test {
     fn get_exponent() {
         let zero = d32 {
             // 101 => 0b0110_0101
-            data: 0b0_01100101_00000000000000000000000,
+            bits: 0b0_01100101_00000000000000000000000,
         };
         let expected = 0;
         let actual = zero.get_exponent();
@@ -601,7 +601,7 @@ mod test {
 
         let one = d32 {
             // 102 => 0b0110_0110
-            data: 0b0_01100110_00000000000000000000000,
+            bits: 0b0_01100110_00000000000000000000000,
         };
         let expected = 1;
         let actual = one.get_exponent();
@@ -609,7 +609,7 @@ mod test {
 
         let neg_one = d32 {
             // 100 => 0b0110_0101
-            data: 0b0_01100100_00000000000000000000000,
+            bits: 0b0_01100100_00000000000000000000000,
         };
         let expected = -1;
         let actual = neg_one.get_exponent();
@@ -617,7 +617,7 @@ mod test {
 
         let ninety = d32 {
             // 100 => 0b0110_0101
-            data: 0b0_10111111_00000000000000000000000,
+            bits: 0b0_10111111_00000000000000000000000,
         };
         let expected = 90;
         let actual = ninety.get_exponent();
@@ -625,7 +625,7 @@ mod test {
 
         let neg_101 = d32 {
             // 0 => 0b0000_0000
-            data: 0b0_00000000_00000000000000000000000,
+            bits: 0b0_00000000_00000000000000000000000,
         };
         let expected = -101;
         let actual = neg_101.get_exponent();
@@ -633,7 +633,7 @@ mod test {
 
         let alternate = d32 {
             // 64 => 0b0100_0000
-            data: 0b0_11_01000000_000000000000000000000,
+            bits: 0b0_11_01000000_000000000000000000000,
         };
         let expected = -37;
         let actual = alternate.get_exponent();
@@ -642,30 +642,30 @@ mod test {
 
     #[test]
     fn get_significand() {
-        let zero = d32 { data: 0b0_0000000_00000000000000000000000 };
+        let zero = d32 { bits: 0b0_0000000_00000000000000000000000 };
         let expected = 0;
         let actual = zero.get_significand();
         assert_eq!(expected, actual);
 
-        let one = d32 { data: 0b0_0000000_00000000000000000000001 };
+        let one = d32 { bits: 0b0_0000000_00000000000000000000001 };
         let expected = 1;
         let actual = one.get_significand();
         assert_eq!(expected, actual);
 
         let eighty = d32 {
             // 80 => 0b0101_0000
-            data: 0b0_00000000_00000000000000001010000,
+            bits: 0b0_00000000_00000000000000001010000,
         };
         let expected = 80;
         let actual = eighty.get_significand();
         assert_eq!(expected, actual);
 
-        let first_24th_bit = d32 { data: 0b0_11_00000000_000000000000000000000 };
+        let first_24th_bit = d32 { bits: 0b0_11_00000000_000000000000000000000 };
         let expected = 8388608;
         let actual = first_24th_bit.get_significand();
         assert_eq!(expected, actual);
 
-        let max = d32 { data: 0b0_11_00000000_110001001011001111111 };
+        let max = d32 { bits: 0b0_11_00000000_110001001011001111111 };
         let expected = 9_999_999;
         let actual = max.get_significand();
         assert_eq!(expected, actual);
