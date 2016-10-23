@@ -348,49 +348,37 @@ impl ops::Add<d32> for d32 {
 
     fn add(self, other: d32) -> d32 {
         if self.is_nan() || other.is_nan() {
-            // if either operand is NaN, so is the result
+            // NaN + anything = NaN
             consts::NAN
         } else if self.is_infinity() {
             if self.is_positive() {
                 if other.is_neg_infinity() {
-                    // if the operands are opposing infinities, the result is NaN
+                    // Infinity + -Infinity = NaN
                     consts::NAN
                 } else {
-                    // if the left operand is positive infinity, and the other is not negative
-                    // infinity or NaN, the result is positive infinity
+                    // Infinity + normal values = Infinity
                     consts::INFINITY
                 }
             } else {
                 if other.is_pos_infinity() {
-                    // if the operands are opposing infinities, the result is NaN
+                    // -Infinity + Infinity = NaN
                     consts::NAN
                 } else {
-                    // if the left operand is negative infinity, and the other is not positive
-                    // infinity or NaN, the result is negative infinity
+                    // -Infinity + normal values = -Infinity
                     consts::NEG_INFINITY
                 }
             }
         } else if other.is_infinity() {
+            assert!(!self.is_infinity());
             if other.is_positive() {
-                if self.is_neg_infinity() {
-                    // if the operands are opposing infinities, the result is NaN
-                    consts::NAN
-                } else {
-                    // if the left operand is positive infinity, and the other is not negative
-                    // infinity or NaN, the result is positive infinity
-                    consts::INFINITY
-                }
+                // normal values + Infinity = Infinity
+                consts::INFINITY
             } else {
-                if self.is_pos_infinity() {
-                    // if the operands are opposing infinities, the result is NaN
-                    consts::NAN
-                } else {
-                    // if the left operand is negative infinity, and the other is not positive
-                    // infinity or NaN, the result is negative infinity
-                    consts::NEG_INFINITY
-                }
+                // normal values + -Infinity = -Infinity
+                consts::NEG_INFINITY
             }
         } else {
+            // Normal case
             let (left_is_neg, left_significand, right_is_neg, right_significand, exponent) =
                 to_common_exponent(&self, &other);
 
@@ -425,7 +413,73 @@ impl ops::Mul<d32> for d32 {
     type Output = d32;
 
     fn mul(self, other: d32) -> d32 {
-        self // TODO
+        use num::Signed;
+
+        if self.is_nan() || other.is_nan() {
+            // NaN * anything = NaN
+            consts::NAN
+        } else if self.is_infinity() {
+            if other.is_zero() {
+                // Inf * 0 = NaN
+                consts::NAN
+            } else {
+                if self.is_positive() {
+                    if other.is_positive() {
+                        // Inf * anything positive = Inf
+                        consts::INFINITY
+                    } else {
+                        // Inf * anything negative = -Inf
+                        consts::NEG_INFINITY
+                    }
+                } else {
+                    if other.is_positive() {
+                        // -Inf * anything positive = -Inf
+                        consts::NEG_INFINITY
+                    } else {
+                        // -Inf * anything negative = Inf
+                        consts::INFINITY
+                    }
+                }
+            }
+        } else if other.is_infinity() {
+            if self.is_zero() {
+                // 0 * Inf = NaN
+                consts::NAN
+            } else {
+                if other.is_positive() {
+                    if self.is_positive() {
+                        // anything positive * Inf = Inf
+                        consts::INFINITY
+                    } else {
+                        // anything negative * Inf = -Inf
+                        consts::NEG_INFINITY
+                    }
+                } else {
+                    if self.is_positive() {
+                        // anything positive * -Inf = -Inf
+                        consts::NEG_INFINITY
+                    } else {
+                        // anything negative * -Inf = Inf
+                        consts::INFINITY
+                    }
+                }
+            }
+        } else if self.is_zero() || other.is_zero() {
+            // 0 * normal values = 0
+            consts::ZERO
+        } else if self == consts::ONE {
+            // 1 * a normal value = the normal value
+            other
+        } else if other == consts::ONE {
+            // a normal value * 1 = the normal value
+            self
+        } else {
+            // Normal case
+            let significand = self.get_significand() * other.get_significand();
+            let exponent = self.get_exponent() + other.get_exponent();
+            let sign = self.get_sign_field() ^ other.get_sign_field();
+            d32::from_data(sign != 0, exponent, significand)
+        }
     }
 }
 
@@ -862,6 +916,7 @@ mod tests {
 
     #[test]
     fn test_add() {
+        // TODO: test adding +0 and -0 to infinity
         let zero = consts::ZERO;
         let one = consts::ONE;
         assert_eq!(one, zero + one);
@@ -914,7 +969,6 @@ mod tests {
         assert_eq!(zero, consts::MAX_VALUE - consts::MAX_VALUE);
         assert_eq!(zero, consts::MIN_VALUE - consts::MIN_VALUE);
 
-        // special values
         let pos_infinity = consts::INFINITY;
         let neg_infinity = consts::NEG_INFINITY;
         assert_eq!(pos_infinity, pos_infinity - neg_infinity);
@@ -926,6 +980,49 @@ mod tests {
         assert!((nan - zero).is_nan());
         assert!((nan - one).is_nan());
         assert!((nan - nan).is_nan());
+    }
+
+    #[test]
+    fn test_mul() {
+        let zero = consts::ZERO;
+        assert_eq!(zero, zero * zero);
+
+        let one = consts::ONE;
+        assert_eq!(zero, one * zero);
+        assert_eq!(one, one * one);
+
+        let two = d32::from_data(false, 0, 2);
+        let four = d32::from_data(false, 0, 4);
+        assert_eq!(four, two * two);
+
+        let eighteen = d32::from_data(false, -2, 1800);
+        assert_eq!(eighteen, one * eighteen);
+        assert_eq!(eighteen, eighteen * one);
+
+        let neg_seventy_two = d32::from_data(true, 0, 72);
+        assert_eq!(neg_seventy_two, -four * eighteen);
+
+        let three_hundred_twenty_four = d32::from_data(false, 0, 324);
+        assert_eq!(three_hundred_twenty_four, eighteen * eighteen);
+        assert_eq!(three_hundred_twenty_four, one * eighteen * eighteen);
+        assert_eq!(three_hundred_twenty_four, one * eighteen * one * eighteen * one);
+        assert_eq!(zero, one * eighteen * eighteen * zero);
+
+        let pos_infinity = consts::INFINITY;
+        let neg_infinity = consts::NEG_INFINITY;
+        assert_eq!(neg_infinity, pos_infinity * neg_infinity);
+        assert_eq!(neg_infinity, neg_infinity * pos_infinity);
+        assert_eq!(pos_infinity, neg_infinity * neg_infinity);
+        assert_eq!(pos_infinity, pos_infinity * two);
+        assert_eq!(neg_infinity, pos_infinity * -two);
+        assert!((pos_infinity * zero).is_nan());
+        assert!((zero * neg_infinity).is_nan());
+
+        let nan = consts::NAN;
+        assert!((nan * zero).is_nan());
+        assert!((nan * one).is_nan());
+        assert!((nan * -four).is_nan());
+        assert!((nan * nan).is_nan());
     }
 
     #[test]
