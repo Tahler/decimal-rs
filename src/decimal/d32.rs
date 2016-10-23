@@ -1,7 +1,5 @@
-use std::ops::{Add, Sub, Mul, Div, Neg, Rem};
-use std::cmp::PartialEq;
+use std::ops;
 use std::fmt;
-use std::default::Default;
 
 use num;
 use num::{Num, Zero, One, Signed};
@@ -322,7 +320,7 @@ impl fmt::UpperExp for d32 {
     }
 }
 
-impl Add<d32> for d32 {
+impl ops::Add<d32> for d32 {
     type Output = d32;
 
     fn add(self, other: d32) -> d32 {
@@ -392,7 +390,7 @@ impl Add<d32> for d32 {
     }
 }
 
-impl Sub<d32> for d32 {
+impl ops::Sub<d32> for d32 {
     type Output = d32;
 
     fn sub(self, other: d32) -> d32 {
@@ -400,7 +398,7 @@ impl Sub<d32> for d32 {
     }
 }
 
-impl Mul<d32> for d32 {
+impl ops::Mul<d32> for d32 {
     type Output = d32;
 
     fn mul(self, other: d32) -> d32 {
@@ -408,7 +406,7 @@ impl Mul<d32> for d32 {
     }
 }
 
-impl Div<d32> for d32 {
+impl ops::Div<d32> for d32 {
     type Output = d32;
 
     fn div(self, other: d32) -> d32 {
@@ -416,7 +414,7 @@ impl Div<d32> for d32 {
     }
 }
 
-impl Neg for d32 {
+impl ops::Neg for d32 {
     type Output = d32;
 
     fn neg(self) -> d32 {
@@ -424,7 +422,7 @@ impl Neg for d32 {
     }
 }
 
-impl Rem<d32> for d32 {
+impl ops::Rem<d32> for d32 {
     type Output = d32;
 
     fn rem(self, other: d32) -> d32 {
