@@ -1,7 +1,12 @@
 # Rust Decimal Library
 
-An implementation of the IEEE 754-2008 standard for decimal floating point numbers. Read more
-[here](https://en.wikipedia.org/wiki/Decimal_floating_point).
+An implementation of the IEEE 754-2008 standard for decimal floating point numbers.
+
+## Research
+
+- https://en.wikipedia.org/wiki/Decimal_floating_point
+- http://speleotrove.com/decimal/decbits.pdf
+- http://speleotrove.com/decimal/daops.html
 
 ## Contributing
 
