@@ -16,7 +16,5 @@ If you're looking to help, there are plenty of small pieces that can be worked o
   - With floats as well as other decimals
 - Display with alternate formatting
 - Remainder
-- Comparisons - equality, less than, greater than
 - FromStrRadix
-- Tests
 - Any other traits that you think should be implemented
