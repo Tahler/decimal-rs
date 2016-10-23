@@ -58,16 +58,24 @@ impl d32 {
     pub fn from_data(is_negative: bool, exponent: i32, significand: u32) -> d32 {
         if exponent < MIN_EXPONENT {
             let shift = MIN_EXPONENT - exponent;
-            let (shifted_exponent, shifted_significand) =
-                shift_exponent(significand, exponent, shift);
+            let shifted_components = shift_exponent(significand, exponent, shift);
+            match shifted_components {
             // Retry with shifted exponent
-            d32::from_data(is_negative, shifted_exponent, shifted_significand)
+                Some((shifted_exponent, shifted_significand)) => d32::from_data(is_negative, shifted_exponent, shifted_significand),
+                None => consts::ZERO,
+            }
         } else if exponent > MAX_EXPONENT {
             let shift = MAX_EXPONENT - exponent;
-            let (shifted_exponent, shifted_significand) =
-                shift_exponent(significand, exponent, shift);
+            let shifted_components = shift_exponent(significand, exponent, shift);
+            match shifted_components {
             // Retry with shifted exponent
-            d32::from_data(is_negative, shifted_exponent, shifted_significand)
+                Some((shifted_exponent, shifted_significand)) => d32::from_data(is_negative, shifted_exponent, shifted_significand),
+                None => if is_negative {
+                    consts::NEG_INFINITY
+                } else {
+                    consts::INFINITY
+                },
+            }
         } else if significand > MAX_SIGNIFICAND {
             if is_negative {
                 consts::NEG_INFINITY
@@ -213,15 +221,19 @@ impl d32 {
     }
 }
 
-fn shift_exponent(significand: u32, exponent: i32, shift: i32) -> (i32, u32) {
+fn shift_exponent(significand: u32, exponent: i32, shift: i32) -> Option<(i32, u32)> {
     let shifted_exponent = exponent + shift;
     let pow_shift = num::pow(10u32, num::abs(shift) as usize);
+    // TODO: not happy about using Option here
     let shifted_significand = if shift < 0 {
-        significand * pow_shift
+        significand.checked_mul(pow_shift)
     } else {
-        significand / pow_shift
+        significand.checked_div(pow_shift)
     };
-    (shifted_exponent, shifted_significand)
+    match shifted_significand {
+        Some(shifted_significand) => Some((shifted_exponent, shifted_significand)),
+        None => None,
+    }
 }
 
 fn to_common_exponent(left: &d32, right: &d32) -> (bool, u32, bool, u32, i32) {
@@ -665,6 +677,10 @@ mod test {
 
         let expected = d32::from_data(false, -101, 0);
         let actual = d32::from_data(false, -102, 1);
+        assert_eq!(expected, actual);
+
+        let expected = consts::ZERO;
+        let actual = d32::from_data(false, -106, 1949);
         assert_eq!(expected, actual);
 
         let expected = consts::INFINITY;
