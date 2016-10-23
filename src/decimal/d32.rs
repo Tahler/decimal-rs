@@ -57,12 +57,16 @@ impl d32 {
     /// still do not fit, the result may end in an "unexpected" value (i.e. ±infinity or zero)
     pub fn from_data(is_negative: bool, exponent: i32, significand: u32) -> d32 {
         if exponent < MIN_EXPONENT {
+            let shift = MIN_EXPONENT - exponent;
             let (shifted_exponent, shifted_significand) =
-                shift_exponent(significand, exponent, MIN_EXPONENT - exponent);
+                shift_exponent(significand, exponent, shift);
+            // Retry with shifted exponent
             d32::from_data(is_negative, shifted_exponent, shifted_significand)
         } else if exponent > MAX_EXPONENT {
+            let shift = MAX_EXPONENT - exponent;
             let (shifted_exponent, shifted_significand) =
-                shift_exponent(significand, exponent, MAX_EXPONENT - exponent);
+                shift_exponent(significand, exponent, shift);
+            // Retry with shifted exponent
             d32::from_data(is_negative, shifted_exponent, shifted_significand)
         } else if significand > MAX_SIGNIFICAND {
             if is_negative {
