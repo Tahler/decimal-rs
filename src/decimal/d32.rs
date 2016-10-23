@@ -540,11 +540,11 @@ impl fmt::UpperExp for d32 {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
     #[test]
-    fn get_exponent() {
+    fn test_get_exponent() {
         let zero = d32 {
             // 101 => 0b0110_0101
             bits: 0b0_01100101_00000000000000000000000,
@@ -595,7 +595,7 @@ mod test {
     }
 
     #[test]
-    fn get_significand() {
+    fn test_get_significand() {
         let zero = d32 { bits: 0b0_0000000_00000000000000000000000 };
         let expected = 0;
         let actual = zero.get_significand();
@@ -626,7 +626,7 @@ mod test {
     }
 
     #[test]
-    fn eq() {
+    fn test_eq() {
         let zero1 = d32::from_data(true, 0, 0);
         let zero2 = d32::from_data(false, 11, 0);
         let zero3 = d32::from_data(true, 90, 0);
@@ -663,7 +663,7 @@ mod test {
     }
 
     #[test]
-    fn from_data_overflow() {
+    fn test_from_data_overflow() {
         let expected = d32::from_data(false, 90, 10);
         let actual = d32::from_data(false, 91, 1);
         assert_eq!(expected, actual);
@@ -698,7 +698,7 @@ mod test {
     }
 
     #[test]
-    fn neg() {
+    fn test_neg() {
         let zero = consts::ZERO;
         assert_eq!(zero, -zero);
 
@@ -717,7 +717,7 @@ mod test {
     }
 
     #[test]
-    fn add() {
+    fn test_add() {
         let zero = consts::ZERO;
         let one = consts::ONE;
         assert_eq!(one, zero + one);
@@ -753,7 +753,7 @@ mod test {
     }
 
     #[test]
-    fn sub() {
+    fn test_sub() {
         let zero = consts::ZERO;
         let one = consts::ONE;
         assert_eq!(one, one - zero);
@@ -785,7 +785,7 @@ mod test {
     }
 
     #[test]
-    fn fmt() {
+    fn test_fmt() {
         let no_change = d32::from_data(false, 0, 1234567);
         let expected = "1234567".to_string();
         let actual = format!("{}", no_change);
