@@ -21,6 +21,7 @@ const MAX_SIGNIFICAND: u32 = 9999999;
 ///
 /// Decimal32 supports 7 decimal digits of significand and an exponent range of −95 to +96, i.e.
 /// ±0.000000×10^−95 to ±9.999999×10^96. (Equivalently, ±0000000×10^−101 to ±9999999×10^90.)
+#[allow(non_camel_case_types)]
 #[derive(Clone, Copy)]
 pub struct d32 {
     bits: u32,
