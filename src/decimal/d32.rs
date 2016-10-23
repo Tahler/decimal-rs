@@ -1,3 +1,4 @@
+use std::cmp;
 use std::ops;
 use std::fmt;
 
@@ -257,7 +258,7 @@ impl Default for d32 {
     }
 }
 
-impl PartialEq for d32 {
+impl cmp::PartialEq for d32 {
     fn eq(&self, other: &d32) -> bool {
         if self.is_zero() && other.is_zero() {
             return true;
@@ -275,6 +276,57 @@ impl PartialEq for d32 {
         let (left_is_neg, left_significand, right_is_neg, right_significand, _) =
             to_common_exponent(&self, &other);
         left_is_neg == right_is_neg && left_significand == right_significand
+    }
+}
+
+impl cmp::PartialOrd for d32 {
+    fn partial_cmp(&self, other: &d32) -> Option<cmp::Ordering> {
+        // NaN special case
+        if self.is_nan() || other.is_nan() {
+            // if either party is NaN, then the result is None (uncomparable)
+            return None;
+        }
+        // Zero special cases (since zero's sign bit is irrelevant)
+        if self.is_zero() {
+            if other.is_zero() {
+                return Some(cmp::Ordering::Equal);
+            } else if other.is_positive() {
+                return Some(cmp::Ordering::Less)
+            } else {
+                return Some(cmp::Ordering::Greater)
+            }
+        }
+        if other.is_zero() {
+            assert!(!self.is_zero());
+            if self.is_positive() {
+                return Some(cmp::Ordering::Greater)
+            } else {
+                return Some(cmp::Ordering::Less)
+            }
+        }
+        // Normal case
+        let lhs_sign_field = self.get_sign_field();
+        let rhs_sign_field = other.get_sign_field();
+        // panic!("{:?}, {:?}, {:?}", lhs_sign_field, rhs_sign_field, lhs_sign_field.partial_cmp(&rhs_sign_field));
+        if lhs_sign_field != rhs_sign_field {
+            // defer to the sign field comparison
+            return rhs_sign_field.partial_cmp(&lhs_sign_field);
+        }
+        // Infinity special cases
+        if self.is_infinity() && other.is_infinity() {
+            assert!(lhs_sign_field == rhs_sign_field);
+            return Some(cmp::Ordering::Equal)
+        }
+        let diff = (*self) - (*other);
+        if diff.is_zero() {
+            Some(cmp::Ordering::Equal)
+        } else {
+            if diff.is_positive() {
+                Some(cmp::Ordering::Greater)
+            } else {
+                Some(cmp::Ordering::Less)
+            }
+        }
     }
 }
 
@@ -728,6 +780,42 @@ mod tests {
         assert!(!neg_infinity.is_positive());
         assert!(neg_infinity.is_neg_infinity());
         assert!(!neg_infinity.is_pos_infinity());
+    }
+
+    #[test]
+    fn test_ord() {
+        let zero1 = d32::from_data(true, 0, 0);
+        let zero2 = d32::from_data(false, 11, 0);
+        assert!(!(zero1 < zero2));
+        assert!(!(zero1 > zero2));
+        assert!(zero1 >= zero2);
+        assert!(zero1 <= zero2);
+        assert!(zero1 >= zero1);
+
+        let one_hundred = d32::from_data(false, 1, 100);
+        assert!(zero1 < one_hundred);
+        assert!(zero1 <= one_hundred);
+
+        let neg_one_hundred = d32::from_data(true, 1, 100);
+        assert!(zero1 > neg_one_hundred);
+        assert!(zero1 >= neg_one_hundred);
+        assert!(one_hundred >= neg_one_hundred);
+        assert!(one_hundred > neg_one_hundred);
+        assert!(neg_one_hundred < one_hundred);
+        assert!(neg_one_hundred <= one_hundred);
+
+        let nan = consts::NAN;
+        assert!(!(nan < nan));
+        assert!(!(nan <= nan));
+        assert!(!(nan > nan));
+        assert!(!(nan >= nan));
+
+        let pos_infinity = consts::INFINITY;
+        assert!(pos_infinity >= pos_infinity);
+
+        let neg_infinity = consts::NEG_INFINITY;
+        assert!(neg_infinity < pos_infinity);
+        assert!(neg_infinity <= pos_infinity);
     }
 
     #[test]
