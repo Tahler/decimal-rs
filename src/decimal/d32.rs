@@ -698,6 +698,29 @@ mod tests {
     }
 
     #[test]
+    fn test_abs() {
+        use num::Signed;
+
+        let zero = consts::ZERO;
+        assert_eq!(zero, zero.abs());
+
+        let pos_infinity = consts::INFINITY;
+        let neg_infinity = consts::NEG_INFINITY;
+        assert_eq!(pos_infinity, pos_infinity.abs());
+        assert_eq!(pos_infinity, neg_infinity.abs());
+
+        let one = consts::ONE;
+        let neg_one = d32::from_data(true, 0, 1);
+        assert_eq!(one, one.abs());
+        assert_eq!(one, neg_one.abs());
+
+        let one_thousand_point_four = d32::from_data(false, -1, 10004);
+        let neg_one_thousand_point_four = d32::from_data(true, -1, 10004);
+        assert_eq!(one_thousand_point_four, one_thousand_point_four.abs());
+        assert_eq!(one_thousand_point_four, neg_one_thousand_point_four.abs());
+    }
+
+    #[test]
     fn test_neg() {
         let zero = consts::ZERO;
         assert_eq!(zero, -zero);
