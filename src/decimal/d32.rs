@@ -4,6 +4,8 @@ use std::fmt;
 use num;
 use num::{Num, Zero, One, Signed};
 
+use bit_ops;
+
 use super::parse_decimal_error::ParseDecimalError;
 
 const NUM_DIGITS: u32 = 7;
@@ -13,9 +15,6 @@ const MAX_EXPONENT: i32 = 90;
 
 const MIN_SIGNIFICAND: u32 = 0;
 const MAX_SIGNIFICAND: u32 = 9999999;
-
-const SIGN_MASK: u32 = 0b1_00000_000000_00000000000000000000;
-const COMBINATION_MASK: u32 = 0b0_11111_000000_00000000000000000000;
 
 /// Represents a 32-bit decimal number according to the [IEEE 754-2008 standard]
 /// (https://en.wikipedia.org/wiki/Decimal32_floating-point_format).
@@ -181,43 +180,38 @@ impl d32 {
     }
 
     fn get_sign_field(&self) -> u32 {
-        (self.bits & SIGN_MASK) >> 31
+        bit_ops::get_bits(self.bits, 31, 32)
     }
 
     fn get_combination_field(&self) -> u32 {
-        (self.bits & COMBINATION_MASK) >> 26
+        bit_ops::get_bits(self.bits, 26, 30)
     }
 
     fn get_first_two_bits_combination_field(&self) -> u32 {
         let combination_field = self.get_combination_field();
-        combination_field >> 3
+        bit_ops::get_bits(combination_field, 3, 5)
     }
 
     fn get_second_two_bits_combination_field(&self) -> u32 {
-        let mask = 0b00110;
         let combination_field = self.get_combination_field();
-        (combination_field & mask) >> 1
+        bit_ops::get_bits(combination_field, 1, 3)
     }
 
     fn get_normal_exponent(&self) -> u32 {
-        let mask: u32 = 0b0_11111_111000_00000000000000000000;
-        (self.bits & mask) >> 23
+        bit_ops::get_bits(self.bits, 23, 30)
     }
 
     fn get_shifted_exponent(&self) -> u32 {
-        let mask: u32 = 0b0_00111_111110_00000000000000000000;
-        (self.bits & mask) >> 21
+        bit_ops::get_bits(self.bits, 21, 28)
     }
 
     fn get_normal_significand(&self) -> u32 {
-        let mask = 0b0_00000_000111_11111111111111111111;
-        self.bits & mask
+        bit_ops::get_bits(self.bits, 0, 21)
     }
 
     fn get_shifted_significand(&self) -> u32 {
         let implicit_100 = 0b100_0_00000_00000_00000_00000;
-        let mask = 0b0_00000_000001_11111111111111111111;
-        implicit_100 + (self.bits & mask)
+        implicit_100 + bit_ops::get_bits(self.bits, 0, 20)
     }
 }
 
@@ -426,7 +420,8 @@ impl Signed for d32 {
     /// Returns the absolute value of this decimal, by returning a copy of this decimal with the
     /// sign bit turned off.
     fn abs(&self) -> d32 {
-        d32 { bits: self.bits & (!SIGN_MASK) }
+        let with_sign_bit_off = bit_ops::clear_bit(self.bits, 31);
+        d32 { bits: with_sign_bit_off }
     }
 
     fn abs_sub(&self, other: &d32) -> d32 {
