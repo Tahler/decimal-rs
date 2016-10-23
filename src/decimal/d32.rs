@@ -552,6 +552,15 @@ mod test {
         assert_eq!(hundred1, hundred2);
         assert_eq!(hundred2, hundred3);
         assert_eq!(hundred3, hundred1);
+
+        let nan = consts::NAN;
+        assert!(nan != nan);
+
+        let pos_infinity = consts::INFINITY;
+        assert_eq!(pos_infinity, pos_infinity);
+
+        let neg_infinity = consts::NEG_INFINITY;
+        assert_eq!(neg_infinity, neg_infinity);
     }
 
     #[test]
