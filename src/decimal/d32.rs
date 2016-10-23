@@ -417,7 +417,7 @@ impl One for d32 {
     }
 }
 
-impl Signed for d32 {
+impl num::Signed for d32 {
     /// Returns the absolute value of this decimal, by returning a copy of this decimal with the
     /// sign bit turned off.
     fn abs(&self) -> d32 {
@@ -449,15 +449,16 @@ impl Signed for d32 {
 
     /// Returns true if this decimal is positive, false otherwise.
     ///
-    /// Note: Both zero and NaN can be positive or negative.
+    /// Note: Zero and NaN are neither positive or negative.
     fn is_positive(&self) -> bool {
-        self.get_sign_field() == 0
+        !self.is_nan() && !self.is_zero() && self.get_sign_field() == 0
     }
 
     /// Returns true if this decimal is negative, false otherwise.
-    /// Note: Both zero and NaN can be positive or negative.
+    ///
+    /// Note: Zero and NaN are neither positive or negative.
     fn is_negative(&self) -> bool {
-        self.get_sign_field() != 0
+        !self.is_nan() && !self.is_zero() && self.get_sign_field() != 0
     }
 }
 
@@ -691,6 +692,42 @@ mod tests {
         let expected = consts::NEG_INFINITY;
         let actual = d32::from_data(true, 94, 9999999);
         assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn test_sign_check() {
+        use num::Signed;
+
+        let one_hundred = d32::from_data(false, 1, 100);
+        assert!(one_hundred.is_positive());
+        assert!(!one_hundred.is_negative());
+
+        let neg_one_hundred = d32::from_data(true, 1, 100);
+        assert!(neg_one_hundred.is_negative());
+        assert!(!neg_one_hundred.is_positive());
+
+        let zero1 = d32::from_data(true, 0, 0);
+        let zero2 = d32::from_data(false, 11, 0);
+        assert!(!zero1.is_positive());
+        assert!(!zero1.is_negative());
+        assert!(!zero2.is_positive());
+        assert!(!zero2.is_negative());
+
+        let nan = consts::NAN;
+        assert!(!nan.is_positive());
+        assert!(!nan.is_negative());
+
+        let pos_infinity = consts::INFINITY;
+        assert!(pos_infinity.is_positive());
+        assert!(!pos_infinity.is_negative());
+        assert!(pos_infinity.is_pos_infinity());
+        assert!(!pos_infinity.is_neg_infinity());
+
+        let neg_infinity = consts::NEG_INFINITY;
+        assert!(neg_infinity.is_negative());
+        assert!(!neg_infinity.is_positive());
+        assert!(neg_infinity.is_neg_infinity());
+        assert!(!neg_infinity.is_pos_infinity());
     }
 
     #[test]
