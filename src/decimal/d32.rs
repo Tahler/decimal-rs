@@ -370,7 +370,7 @@ impl ops::Sub<d32> for d32 {
     type Output = d32;
 
     fn sub(self, other: d32) -> d32 {
-        self // TODO
+        self + (-other)
     }
 }
 
@@ -752,7 +752,39 @@ mod test {
         assert!((nan + nan).is_nan());
     }
 
-        #[test]
+    #[test]
+    fn sub() {
+        let zero = consts::ZERO;
+        let one = consts::ONE;
+        assert_eq!(one, one - zero);
+
+        assert_eq!(zero, one - one);
+
+        let eighteen = d32::from_data(false, -2, 1800);
+        let mut acc = eighteen;
+        for _ in 0..18 {
+            acc = acc - one;
+        }
+        assert_eq!(zero, acc);
+
+        assert_eq!(zero, consts::MAX_VALUE - consts::MAX_VALUE);
+        assert_eq!(zero, consts::MIN_VALUE - consts::MIN_VALUE);
+
+        // special values
+        let pos_infinity = consts::INFINITY;
+        let neg_infinity = consts::NEG_INFINITY;
+        assert_eq!(pos_infinity, pos_infinity - neg_infinity);
+        assert_eq!(neg_infinity, neg_infinity - pos_infinity);
+        assert!((pos_infinity - pos_infinity).is_nan());
+        assert!((neg_infinity - neg_infinity).is_nan());
+
+        let nan = consts::NAN;
+        assert!((nan - zero).is_nan());
+        assert!((nan - one).is_nan());
+        assert!((nan - nan).is_nan());
+    }
+
+    #[test]
     fn fmt() {
         let no_change = d32::from_data(false, 0, 1234567);
         let expected = "1234567".to_string();
