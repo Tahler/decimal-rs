@@ -720,10 +720,6 @@ mod test {
     fn add() {
         let zero = consts::ZERO;
         let one = consts::ONE;
-        let pos_infinity = consts::INFINITY;
-        let neg_infinity = consts::NEG_INFINITY;
-        let nan = consts::NAN;
-
         assert_eq!(one, zero + one);
 
         let two1 = d32::from_data(false, -1, 20);
@@ -743,12 +739,14 @@ mod test {
         assert!((consts::MIN_VALUE + consts::MIN_VALUE).is_neg_infinity());
 
         // special values
+        let pos_infinity = consts::INFINITY;
+        let neg_infinity = consts::NEG_INFINITY;
         assert_eq!(pos_infinity, pos_infinity + pos_infinity);
         assert_eq!(neg_infinity, neg_infinity + neg_infinity);
-
         assert!((pos_infinity + neg_infinity).is_nan());
         assert!((neg_infinity + pos_infinity).is_nan());
 
+        let nan = consts::NAN;
         assert!((nan + zero).is_nan());
         assert!((nan + one).is_nan());
         assert!((nan + nan).is_nan());
