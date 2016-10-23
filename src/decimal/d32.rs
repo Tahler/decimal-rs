@@ -60,7 +60,7 @@ impl d32 {
             let shift = MIN_EXPONENT - exponent;
             let shifted_components = shift_exponent(significand, exponent, shift);
             match shifted_components {
-            // Retry with shifted exponent
+                // Retry with shifted exponent
                 Some((shifted_exponent, shifted_significand)) => d32::from_data(is_negative, shifted_exponent, shifted_significand),
                 None => consts::ZERO,
             }
@@ -68,7 +68,7 @@ impl d32 {
             let shift = MAX_EXPONENT - exponent;
             let shifted_components = shift_exponent(significand, exponent, shift);
             match shifted_components {
-            // Retry with shifted exponent
+                // Retry with shifted exponent
                 Some((shifted_exponent, shifted_significand)) => d32::from_data(is_negative, shifted_exponent, shifted_significand),
                 None => if is_negative {
                     consts::NEG_INFINITY
@@ -287,7 +287,12 @@ impl ops::Neg for d32 {
     type Output = d32;
 
     fn neg(self) -> d32 {
-        d32 { bits: self.bits ^ 1 << 31 }
+        use super::super::bit_ops;
+
+        // Flip the MSB (most significant bit)
+        let msb_flipped = bit_ops::toggle_bit(self.bits, 31);
+
+        d32 { bits: msb_flipped }
     }
 }
 
@@ -690,6 +695,25 @@ mod test {
         let expected = consts::NEG_INFINITY;
         let actual = d32::from_data(true, 94, 9999999);
         assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn neg() {
+        let zero = consts::ZERO;
+        assert_eq!(zero, -zero);
+
+        let pos_infinity = consts::INFINITY;
+        let neg_infinity = consts::NEG_INFINITY;
+        assert_eq!(pos_infinity, -neg_infinity);
+        assert_eq!(neg_infinity, -pos_infinity);
+
+        let one = consts::ONE;
+        let neg_one = d32::from_data(true, 0, 1);
+        assert_eq!(neg_one, -one);
+
+        let one_thousand_point_four = d32::from_data(false, -1, 10004);
+        let neg_one_thousand_point_four = d32::from_data(true, -1, 10004);
+        assert_eq!(neg_one_thousand_point_four, -one_thousand_point_four);
     }
 
     #[test]
