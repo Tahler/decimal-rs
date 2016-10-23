@@ -708,7 +708,7 @@ mod test {
     #[test]
     fn add() {
         let zero = consts::ZERO;
-        let one = ONE;
+        let one = consts::ONE;
         let pos_infinity = consts::INFINITY;
         let neg_infinity = consts::NEG_INFINITY;
         let nan = consts::NAN;
@@ -728,7 +728,7 @@ mod test {
         }
         assert_eq!(eighteen, sum);
 
-        assert!((MAX_VALUE + MAX_VALUE).is_infinity());
+        assert!((consts::MAX_VALUE + consts::MAX_VALUE).is_infinity());
         assert!((consts::MIN_VALUE + consts::MIN_VALUE).is_neg_infinity());
 
         // special values
