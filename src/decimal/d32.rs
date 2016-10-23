@@ -250,77 +250,32 @@ impl Default for d32 {
     }
 }
 
-impl fmt::Debug for d32 {
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        let debug_str = if self.is_infinity() {
-            if self.is_positive() {
-                "d32::consts::INFINITY".to_string()
-            } else {
-                "d32::consts::NEG_INFINITY".to_string()
-            }
-        } else if self.is_nan() {
-            "d32::consts::NAN".to_string()
-        } else {
-            let (is_negative, exponent, significand) = self.get_data();
-            format!("d32 {{ is_negative: {}, exponent: {}, significand: {} }}",
-                    is_negative,
-                    exponent,
-                    significand)
-        };
-
-        write!(formatter, "{}", debug_str)
+impl PartialEq for d32 {
+    fn eq(&self, other: &d32) -> bool {
+        if self.is_zero() && other.is_zero() {
+            return true;
+        }
+        if self.get_sign_field() != other.get_sign_field() {
+            return false;
+        }
+        if self.is_infinity() && other.is_infinity() {
+            assert_eq!(self.get_sign_field(), other.get_sign_field());
+            return true;
+        }
+        if self.is_nan() && other.is_nan() {
+            return false;
+        }
+        let (left_is_neg, left_significand, right_is_neg, right_significand, _) =
+            to_common_exponent(&self, &other);
+        left_is_neg == right_is_neg && left_significand == right_significand
     }
 }
 
-// let width = match formatter.width() {
-//     Some(width) => width,
-//     None => 0
-// };
-// let precision = match formatter.precision() {
-//     Some(precision) => precision,
-//     None => 0
-// };
-impl fmt::Display for d32 {
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        use super::super::zero_pad::{pad_right, pad_left};
+impl ops::Neg for d32 {
+    type Output = d32;
 
-        let (is_negative, exponent, significand) = self.get_data();
-
-        let digits = significand.to_string();
-        let num_significant_digits = digits.len() as i32;
-
-        let sign = if is_negative {
-            "-".to_string()
-        } else {
-            "".to_string()
-        };
-
-        let pos_decimal_str = if exponent >= 0 {
-            pad_right(&digits, exponent as usize)
-        } else if exponent > -num_significant_digits {
-            let num_left_digits = (num_significant_digits + exponent) as usize;
-            let left = digits[0..num_left_digits].to_string();
-            let right = digits[num_left_digits..].to_string();
-            left + "." + &right
-        } else {
-            let right = pad_left(&digits, ((-exponent) - num_significant_digits) as usize);
-            "0.".to_string() + &right
-        };
-
-        let decimal_str = sign + &pos_decimal_str;
-        write!(formatter, "{}", decimal_str)
-    }
-}
-
-impl fmt::LowerExp for d32 {
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        unimplemented!()
-    }
-}
-
-impl fmt::UpperExp for d32 {
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        unimplemented!()
+    fn neg(self) -> d32 {
+        d32 { bits: self.bits ^ 1 << 31 }
     }
 }
 
@@ -418,40 +373,11 @@ impl ops::Div<d32> for d32 {
     }
 }
 
-impl ops::Neg for d32 {
-    type Output = d32;
-
-    fn neg(self) -> d32 {
-        d32 { bits: self.bits ^ 1 << 31 }
-    }
-}
-
 impl ops::Rem<d32> for d32 {
     type Output = d32;
 
     fn rem(self, other: d32) -> d32 {
         self // TODO
-    }
-}
-
-impl PartialEq for d32 {
-    fn eq(&self, other: &d32) -> bool {
-        if self.is_zero() && other.is_zero() {
-            return true;
-        }
-        if self.get_sign_field() != other.get_sign_field() {
-            return false;
-        }
-        if self.is_infinity() && other.is_infinity() {
-            assert_eq!(self.get_sign_field(), other.get_sign_field());
-            return true;
-        }
-        if self.is_nan() && other.is_nan() {
-            return false;
-        }
-        let (left_is_neg, left_significand, right_is_neg, right_significand, _) =
-            to_common_exponent(&self, &other);
-        left_is_neg == right_is_neg && left_significand == right_significand
     }
 }
 
@@ -519,6 +445,80 @@ impl Signed for d32 {
     /// Note: Both zero and NaN can be positive or negative.
     fn is_negative(&self) -> bool {
         self.get_sign_field() != 0
+    }
+}
+
+impl fmt::Debug for d32 {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        let debug_str = if self.is_infinity() {
+            if self.is_positive() {
+                "d32::consts::INFINITY".to_string()
+            } else {
+                "d32::consts::NEG_INFINITY".to_string()
+            }
+        } else if self.is_nan() {
+            "d32::consts::NAN".to_string()
+        } else {
+            let (is_negative, exponent, significand) = self.get_data();
+            format!("d32 {{ is_negative: {}, exponent: {}, significand: {} }}",
+                    is_negative,
+                    exponent,
+                    significand)
+        };
+
+        write!(formatter, "{}", debug_str)
+    }
+}
+
+// let width = match formatter.width() {
+//     Some(width) => width,
+//     None => 0
+// };
+// let precision = match formatter.precision() {
+//     Some(precision) => precision,
+//     None => 0
+// };
+impl fmt::Display for d32 {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        use super::super::zero_pad::{pad_right, pad_left};
+
+        let (is_negative, exponent, significand) = self.get_data();
+
+        let digits = significand.to_string();
+        let num_significant_digits = digits.len() as i32;
+
+        let sign = if is_negative {
+            "-".to_string()
+        } else {
+            "".to_string()
+        };
+
+        let pos_decimal_str = if exponent >= 0 {
+            pad_right(&digits, exponent as usize)
+        } else if exponent > -num_significant_digits {
+            let num_left_digits = (num_significant_digits + exponent) as usize;
+            let left = digits[0..num_left_digits].to_string();
+            let right = digits[num_left_digits..].to_string();
+            left + "." + &right
+        } else {
+            let right = pad_left(&digits, ((-exponent) - num_significant_digits) as usize);
+            "0.".to_string() + &right
+        };
+
+        let decimal_str = sign + &pos_decimal_str;
+        write!(formatter, "{}", decimal_str)
+    }
+}
+
+impl fmt::LowerExp for d32 {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        unimplemented!() // TODO
+    }
+}
+
+impl fmt::UpperExp for d32 {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        unimplemented!() // TODO
     }
 }
 
