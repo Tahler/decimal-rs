@@ -29,17 +29,21 @@ pub struct d32 {
     bits: u32,
 }
 
-pub const ZERO: d32 = d32 { bits: 0b0_01100101_00000000000000000000000 };
-pub const ONE: d32 = d32 { bits: 0b0_01100101_00000000000000000000001 };
+pub mod consts {
+    use super::d32;
 
-pub const MAX_VALUE: d32 = d32 { bits: 0b0_11_10111111_110001001011001111111 };
-pub const MIN_VALUE: d32 = d32 { bits: 0b1_11_10111111_110001001011001111111 };
+    pub const ZERO: d32 = d32 { bits: 0b0_01100101_00000000000000000000000 };
+    pub const ONE: d32 = d32 { bits: 0b0_01100101_00000000000000000000001 };
 
-pub const INFINITY: d32 = d32 { bits: 0b0_11110_000000_00000000000000000000 };
-pub const NEG_INFINITY: d32 = d32 { bits: 0b1_11110_000000_00000000000000000000 };
-pub const QNAN: d32 = d32 { bits: 0b0_11111_000000_00000000000000000000 };
-pub const SNAN: d32 = d32 { bits: 0b0_11111_100000_00000000000000000000 };
-pub const NAN: d32 = QNAN;
+    pub const MAX_VALUE: d32 = d32 { bits: 0b0_11_10111111_110001001011001111111 };
+    pub const MIN_VALUE: d32 = d32 { bits: 0b1_11_10111111_110001001011001111111 };
+
+    pub const INFINITY: d32 = d32 { bits: 0b0_11110_000000_00000000000000000000 };
+    pub const NEG_INFINITY: d32 = d32 { bits: 0b1_11110_000000_00000000000000000000 };
+    pub const QNAN: d32 = d32 { bits: 0b0_11111_000000_00000000000000000000 };
+    pub const SNAN: d32 = d32 { bits: 0b0_11111_100000_00000000000000000000 };
+    pub const NAN: d32 = QNAN;
+}
 
 impl d32 {
     /// Creates and initializes a d32 representation of zero.
@@ -55,27 +59,21 @@ impl d32 {
     /// still do not fit, the result may end in an "unexpected" value (i.e. ±infinity or zero)
     pub fn from_data(is_negative: bool, exponent: i32, significand: u32) -> d32 {
         if exponent < MIN_EXPONENT {
-            let (shifted_exponent, shifted_significand) = shift_exponent(significand,
-                                                                         exponent,
-                                                                         MIN_EXPONENT - exponent);
+            let (shifted_exponent, shifted_significand) =
+                shift_exponent(significand, exponent, MIN_EXPONENT - exponent);
             d32::from_data(is_negative, shifted_exponent, shifted_significand)
         } else if exponent > MAX_EXPONENT {
-            let (shifted_exponent, shifted_significand) = shift_exponent(significand,
-                                                                         exponent,
-                                                                         MAX_EXPONENT - exponent);
+            let (shifted_exponent, shifted_significand) =
+                shift_exponent(significand, exponent, MAX_EXPONENT - exponent);
             d32::from_data(is_negative, shifted_exponent, shifted_significand)
         } else if significand > MAX_SIGNIFICAND {
             if is_negative {
-                NEG_INFINITY
+                consts::NEG_INFINITY
             } else {
-                INFINITY
+                consts::INFINITY
             }
         } else {
-            let sign_field = (if is_negative {
-                1
-            } else {
-                0
-            }) << 31;
+            let sign_field = (if is_negative { 1 } else { 0 }) << 31;
             let biased_exponent = (exponent - MIN_EXPONENT) as u32;
 
             let implicit_field;
@@ -103,11 +101,7 @@ impl d32 {
 
     pub fn to_f64(&self) -> f64 {
         let (is_negative, exponent, significand) = self.get_data();
-        let multiplier = if is_negative {
-            -1.0
-        } else {
-            1.0
-        };
+        let multiplier = if is_negative { -1.0 } else { 1.0 };
         multiplier * 10f64.powi(exponent) * (significand as f64)
     }
 
@@ -258,12 +252,12 @@ impl fmt::Debug for d32 {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         let debug_str = if self.is_infinity() {
             if self.is_positive() {
-                "d32::INFINITY".to_string()
+                "d32::consts::INFINITY".to_string()
             } else {
-                "d32::NEG_INFINITY".to_string()
+                "d32::consts::NEG_INFINITY".to_string()
             }
         } else if self.is_nan() {
-            "d32::NAN".to_string()
+            "d32::consts::NAN".to_string()
         } else {
             let (is_negative, exponent, significand) = self.get_data();
             format!("d32 {{ is_negative: {}, exponent: {}, significand: {} }}",
@@ -334,45 +328,45 @@ impl Add<d32> for d32 {
     fn add(self, other: d32) -> d32 {
         if self.is_nan() || other.is_nan() {
             // if either operand is NaN, so is the result
-            NAN
+            consts::NAN
         } else if self.is_infinity() {
             if self.is_positive() {
                 if other.is_neg_infinity() {
                     // if the operands are opposing infinities, the result is NaN
-                    NAN
+                    consts::NAN
                 } else {
                     // if the left operand is positive infinity, and the other is not negative
                     // infinity or NaN, the result is positive infinity
-                    INFINITY
+                    consts::INFINITY
                 }
             } else {
                 if other.is_pos_infinity() {
                     // if the operands are opposing infinities, the result is NaN
-                    NAN
+                    consts::NAN
                 } else {
                     // if the left operand is negative infinity, and the other is not positive
                     // infinity or NaN, the result is negative infinity
-                    NEG_INFINITY
+                    consts::NEG_INFINITY
                 }
             }
         } else if other.is_infinity() {
             if other.is_positive() {
                 if self.is_neg_infinity() {
                     // if the operands are opposing infinities, the result is NaN
-                    NAN
+                    consts::NAN
                 } else {
                     // if the left operand is positive infinity, and the other is not negative
                     // infinity or NaN, the result is positive infinity
-                    INFINITY
+                    consts::INFINITY
                 }
             } else {
                 if self.is_pos_infinity() {
                     // if the operands are opposing infinities, the result is NaN
-                    NAN
+                    consts::NAN
                 } else {
                     // if the left operand is negative infinity, and the other is not positive
                     // infinity or NaN, the result is negative infinity
-                    NEG_INFINITY
+                    consts::NEG_INFINITY
                 }
             }
         } else {
@@ -469,7 +463,7 @@ impl Num for d32 {
 
 impl Zero for d32 {
     fn zero() -> d32 {
-        ZERO
+        consts::ZERO
     }
 
     fn is_zero(&self) -> bool {
@@ -479,7 +473,7 @@ impl Zero for d32 {
 
 impl One for d32 {
     fn one() -> d32 {
-        ONE
+        consts::ONE
     }
 }
 
@@ -580,11 +574,11 @@ mod test {
         let actual = d32::from_data(false, -102, 1);
         assert_eq!(expected, actual);
 
-        let expected = INFINITY;
+        let expected = consts::INFINITY;
         let actual = d32::from_data(false, 94, 9999999);
         assert_eq!(expected, actual);
 
-        let expected = NEG_INFINITY;
+        let expected = consts::NEG_INFINITY;
         let actual = d32::from_data(true, 94, 9999999);
         assert_eq!(expected, actual);
     }
@@ -711,11 +705,11 @@ mod test {
 
     #[test]
     fn add() {
-        let zero = ZERO;
+        let zero = consts::ZERO;
         let one = ONE;
-        let pos_infinity = INFINITY;
-        let neg_infinity = NEG_INFINITY;
-        let nan = NAN;
+        let pos_infinity = consts::INFINITY;
+        let neg_infinity = consts::NEG_INFINITY;
+        let nan = consts::NAN;
 
         assert_eq!(one, zero + one);
 
@@ -726,14 +720,14 @@ mod test {
         assert_eq!(two2, one + one);
 
         let eighteen = d32::from_data(false, -2, 1800);
-        let mut sum = ZERO;
+        let mut sum = consts::ZERO;
         for _ in 0..18 {
             sum = sum + one;
         }
         assert_eq!(eighteen, sum);
 
         assert!((MAX_VALUE + MAX_VALUE).is_infinity());
-        assert!((MIN_VALUE + MIN_VALUE).is_neg_infinity());
+        assert!((consts::MIN_VALUE + consts::MIN_VALUE).is_neg_infinity());
 
         // special values
         assert_eq!(pos_infinity, pos_infinity + pos_infinity);
