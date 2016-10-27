@@ -14,13 +14,13 @@ const NUM_DIGITS: u32 = 7;
 const MIN_EXPONENT: i32 = -101;
 const MAX_EXPONENT: i32 = 90;
 
-const MIN_SIGNIFICAND: u32 = 0;
-const MAX_SIGNIFICAND: u32 = 9999999;
+const MIN_COEFFICIENT: u32 = 0;
+const MAX_COEFFICIENT: u32 = 9999999;
 
 /// Represents a 32-bit decimal number according to the [IEEE 754-2008 standard]
 /// (https://en.wikipedia.org/wiki/Decimal32_floating-point_format).
 ///
-/// Decimal32 supports 7 decimal digits of significand and an exponent range of −95 to +96, i.e.
+/// Decimal32 supports 7 decimal digits of coefficient and an exponent range of −95 to +96, i.e.
 /// ±0.000000×10^−95 to ±9.999999×10^96. (Equivalently, ±0000000×10^−101 to ±9999999×10^90.)
 #[allow(non_camel_case_types)]
 #[derive(Clone, Copy)]
@@ -51,33 +51,33 @@ impl d32 {
     }
 
     /// Creates and initialize a decimal32 from its significant parts: the sign, exponent, and
-    /// significand, respectively.
+    /// coefficient, respectively.
     ///
     /// If the exponent is out of range (less than -101 or greater than 90), the data will be
     /// shifted in an attempt to be fit into the 32-bit representation. If the shifted components
     /// still do not fit, the result may end in an "unexpected" value (i.e. ±infinity or zero)
-    pub fn from_data(is_negative: bool, exponent: i32, significand: u32) -> d32 {
+    pub fn from_data(is_negative: bool, exponent: i32, coefficient: u32) -> d32 {
         if exponent < MIN_EXPONENT {
             let shift = MIN_EXPONENT - exponent;
-            let shifted_components = shift_exponent(significand, exponent, shift);
+            let shifted_components = shift_exponent(coefficient, exponent, shift);
             match shifted_components {
                 // Retry with shifted exponent
-                Some((shifted_exponent, shifted_significand)) => d32::from_data(is_negative, shifted_exponent, shifted_significand),
+                Some((shifted_exponent, shifted_coefficient)) => d32::from_data(is_negative, shifted_exponent, shifted_coefficient),
                 None => consts::ZERO,
             }
         } else if exponent > MAX_EXPONENT {
             let shift = MAX_EXPONENT - exponent;
-            let shifted_components = shift_exponent(significand, exponent, shift);
+            let shifted_components = shift_exponent(coefficient, exponent, shift);
             match shifted_components {
                 // Retry with shifted exponent
-                Some((shifted_exponent, shifted_significand)) => d32::from_data(is_negative, shifted_exponent, shifted_significand),
+                Some((shifted_exponent, shifted_coefficient)) => d32::from_data(is_negative, shifted_exponent, shifted_coefficient),
                 None => if is_negative {
                     consts::NEG_INFINITY
                 } else {
                     consts::INFINITY
                 },
             }
-        } else if significand > MAX_SIGNIFICAND {
+        } else if coefficient > MAX_COEFFICIENT {
             if is_negative {
                 consts::NEG_INFINITY
             } else {
@@ -89,19 +89,19 @@ impl d32 {
 
             let implicit_field;
             let exponent_field;
-            let significand_field;
-            if significand < 8_388_608 {
+            let coefficient_field;
+            if coefficient < 8_388_608 {
                 implicit_field = 0;
                 exponent_field = biased_exponent << 23; // TODO think
-                significand_field = significand;
+                coefficient_field = coefficient;
             } else {
-                // 8,388,608 is the first number that requires the implicit (100) in the significand
+                // 8,388,608 is the first number that requires the implicit (100) in the coefficient
                 implicit_field = 0b11 << 29;
                 exponent_field = biased_exponent << 21;
                 // remove the implicit (100)
-                significand_field = significand - 0b1000_0000_0000_0000_0000_0000;
+                coefficient_field = coefficient - 0b1000_0000_0000_0000_0000_0000;
             }
-            d32 { bits: sign_field + implicit_field + exponent_field + significand_field }
+            d32 { bits: sign_field + implicit_field + exponent_field + coefficient_field }
         }
     }
 
@@ -111,9 +111,9 @@ impl d32 {
     }
 
     pub fn to_f64(&self) -> f64 {
-        let (is_negative, exponent, significand) = self.get_data();
+        let (is_negative, exponent, coefficient) = self.get_data();
         let multiplier = if is_negative { -1.0 } else { 1.0 };
-        multiplier * 10f64.powi(exponent) * (significand as f64)
+        multiplier * 10f64.powi(exponent) * (coefficient as f64)
     }
 
     /// Returns true if the combination field signifies infinity, and false otherwise.
@@ -139,21 +139,21 @@ impl d32 {
     }
 
     /// Returns the three defining pieces of the decimal - the sign (true if negative), the
-    /// exponent, and the significand, respectively.
+    /// exponent, and the coefficient, respectively.
     ///
     /// Do not expect well-behaved results if this decimal is NaN or infinity.
     pub fn get_data(&self) -> (bool, i32, u32) {
         // While it would be nice to make this method simply return (self.get_sign(),
-        // self.get_exponent(), and self.get_significand()), that would require two duplicate checks
+        // self.get_exponent(), and self.get_coefficient()), that would require two duplicate checks
         // on the combination field.
         let sign = self.get_sign_field() != 0;
-        let (exponent, significand) = if self.get_first_two_bits_combination_field() < 3 {
-            ((self.get_normal_exponent() as i32) + MIN_EXPONENT, self.get_normal_significand())
+        let (exponent, coefficient) = if self.get_first_two_bits_combination_field() < 3 {
+            ((self.get_normal_exponent() as i32) + MIN_EXPONENT, self.get_normal_coefficient())
         } else {
             // self.get_second_two_bits_combination_field() < 3
-            ((self.get_shifted_exponent() as i32) + MIN_EXPONENT, self.get_shifted_significand())
+            ((self.get_shifted_exponent() as i32) + MIN_EXPONENT, self.get_shifted_coefficient())
         };
-        (sign, exponent, significand)
+        (sign, exponent, coefficient)
     }
 
     /// Returns this d32's exponent value.
@@ -169,15 +169,15 @@ impl d32 {
         (exponent as i32) + MIN_EXPONENT
     }
 
-    /// Returns this d32's significand value.
+    /// Returns this d32's coefficient value.
     ///
     /// Do not expect well-behaved results if this decimal is NaN or infinity.
-    pub fn get_significand(&self) -> u32 {
+    pub fn get_coefficient(&self) -> u32 {
         if self.get_first_two_bits_combination_field() < 3 {
-            self.get_normal_significand()
+            self.get_normal_coefficient()
         } else {
             // self.get_second_two_bits_combination_field() < 3
-            self.get_shifted_significand()
+            self.get_shifted_coefficient()
         }
     }
 
@@ -207,27 +207,27 @@ impl d32 {
         bit_ops::get_bits(self.bits, 21, 28)
     }
 
-    fn get_normal_significand(&self) -> u32 {
+    fn get_normal_coefficient(&self) -> u32 {
         bit_ops::get_bits(self.bits, 0, 21)
     }
 
-    fn get_shifted_significand(&self) -> u32 {
+    fn get_shifted_coefficient(&self) -> u32 {
         let implicit_100 = 0b100_0_00000_00000_00000_00000;
         implicit_100 + bit_ops::get_bits(self.bits, 0, 20)
     }
 }
 
-fn shift_exponent(significand: u32, exponent: i32, shift: i32) -> Option<(i32, u32)> {
+fn shift_exponent(coefficient: u32, exponent: i32, shift: i32) -> Option<(i32, u32)> {
     let shifted_exponent = exponent + shift;
     let pow_shift = num::pow(10u32, num::abs(shift) as usize);
     // TODO: not happy about using Option here
-    let shifted_significand = if shift < 0 {
-        significand.checked_mul(pow_shift)
+    let shifted_coefficient = if shift < 0 {
+        coefficient.checked_mul(pow_shift)
     } else {
-        significand.checked_div(pow_shift)
+        coefficient.checked_div(pow_shift)
     };
-    match shifted_significand {
-        Some(shifted_significand) => Some((shifted_exponent, shifted_significand)),
+    match shifted_coefficient {
+        Some(shifted_coefficient) => Some((shifted_exponent, shifted_coefficient)),
         None => None,
     }
 }
@@ -235,19 +235,19 @@ fn shift_exponent(significand: u32, exponent: i32, shift: i32) -> Option<(i32, u
 fn to_common_exponent(left: &d32, right: &d32) -> (bool, u32, bool, u32, i32) {
     use std::cmp::Ordering;
 
-    let (left_neg, left_exponent, left_significand) = left.get_data();
-    let (right_neg, right_exponent, right_significand) = right.get_data();
+    let (left_neg, left_exponent, left_coefficient) = left.get_data();
+    let (right_neg, right_exponent, right_coefficient) = right.get_data();
     match left_exponent.cmp(&right_exponent) {
         Ordering::Equal => {
-            (left_neg, left_significand, right_neg, right_significand, left_exponent)
+            (left_neg, left_coefficient, right_neg, right_coefficient, left_exponent)
         }
         Ordering::Less => {
             let shift = num::pow(10u32, (right_exponent - left_exponent) as usize);
-            (left_neg, left_significand, right_neg, right_significand * shift, left_exponent)
+            (left_neg, left_coefficient, right_neg, right_coefficient * shift, left_exponent)
         }
         Ordering::Greater => {
             let shift = num::pow(10u32, (left_exponent - right_exponent) as usize);
-            (left_neg, left_significand * shift, right_neg, right_significand, right_exponent)
+            (left_neg, left_coefficient * shift, right_neg, right_coefficient, right_exponent)
         }
     }
 }
@@ -273,9 +273,9 @@ impl cmp::PartialEq for d32 {
         if self.is_nan() && other.is_nan() {
             return false;
         }
-        let (left_is_neg, left_significand, right_is_neg, right_significand, _) =
+        let (left_is_neg, left_coefficient, right_is_neg, right_coefficient, _) =
             to_common_exponent(&self, &other);
-        left_is_neg == right_is_neg && left_significand == right_significand
+        left_is_neg == right_is_neg && left_coefficient == right_coefficient
     }
 }
 
@@ -379,24 +379,24 @@ impl ops::Add<d32> for d32 {
             }
         } else {
             // Normal case
-            let (left_is_neg, left_significand, right_is_neg, right_significand, exponent) =
+            let (left_is_neg, left_coefficient, right_is_neg, right_coefficient, exponent) =
                 to_common_exponent(&self, &other);
 
-            let signed_left_significand = if left_is_neg {
-                -(left_significand as i32)
+            let signed_left_coefficient = if left_is_neg {
+                -(left_coefficient as i32)
             } else {
-                (left_significand as i32)
+                (left_coefficient as i32)
             };
-            let signed_right_significand = if right_is_neg {
-                -(right_significand as i32)
+            let signed_right_coefficient = if right_is_neg {
+                -(right_coefficient as i32)
             } else {
-                (right_significand as i32)
+                (right_coefficient as i32)
             };
 
-            let signed_sum_significand: i32 = signed_left_significand + signed_right_significand;
-            let sum_is_negative = signed_sum_significand < 0;
-            let unsigned_sum_significand = num::abs(signed_sum_significand) as u32;
-            d32::from_data(sum_is_negative, exponent, unsigned_sum_significand)
+            let signed_sum_coefficient: i32 = signed_left_coefficient + signed_right_coefficient;
+            let sum_is_negative = signed_sum_coefficient < 0;
+            let unsigned_sum_coefficient = num::abs(signed_sum_coefficient) as u32;
+            d32::from_data(sum_is_negative, exponent, unsigned_sum_coefficient)
         }
     }
 }
@@ -475,10 +475,10 @@ impl ops::Mul<d32> for d32 {
             self
         } else {
             // Normal case
-            let significand = self.get_significand() * other.get_significand();
+            let coefficient = self.get_coefficient() * other.get_coefficient();
             let exponent = self.get_exponent() + other.get_exponent();
             let sign = self.get_sign_field() ^ other.get_sign_field();
-            d32::from_data(sign != 0, exponent, significand)
+            d32::from_data(sign != 0, exponent, coefficient)
         }
     }
 }
@@ -513,7 +513,7 @@ impl Zero for d32 {
     }
 
     fn is_zero(&self) -> bool {
-        (!self.is_infinity() && !self.is_nan()) && self.get_significand() == 0
+        (!self.is_infinity() && !self.is_nan()) && self.get_coefficient() == 0
     }
 }
 
@@ -579,11 +579,11 @@ impl fmt::Debug for d32 {
         } else if self.is_nan() {
             "d32::consts::NAN".to_string()
         } else {
-            let (is_negative, exponent, significand) = self.get_data();
-            format!("d32 {{ is_negative: {}, exponent: {}, significand: {} }}",
+            let (is_negative, exponent, coefficient) = self.get_data();
+            format!("d32 {{ is_negative: {}, exponent: {}, coefficient: {} }}",
                     is_negative,
                     exponent,
-                    significand)
+                    coefficient)
         };
 
         write!(formatter, "{}", debug_str)
@@ -602,9 +602,9 @@ impl fmt::Display for d32 {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         use super::super::zero_pad::{pad_right, pad_left};
 
-        let (is_negative, exponent, significand) = self.get_data();
+        let (is_negative, exponent, coefficient) = self.get_data();
 
-        let digits = significand.to_string();
+        let digits = coefficient.to_string();
         let num_significant_digits = digits.len() as i32;
 
         let sign = if is_negative {
@@ -698,15 +698,15 @@ mod tests {
     }
 
     #[test]
-    fn test_get_significand() {
+    fn test_get_coefficient() {
         let zero = d32 { bits: 0b0_0000000_00000000000000000000000 };
         let expected = 0;
-        let actual = zero.get_significand();
+        let actual = zero.get_coefficient();
         assert_eq!(expected, actual);
 
         let one = d32 { bits: 0b0_0000000_00000000000000000000001 };
         let expected = 1;
-        let actual = one.get_significand();
+        let actual = one.get_coefficient();
         assert_eq!(expected, actual);
 
         let eighty = d32 {
@@ -714,17 +714,17 @@ mod tests {
             bits: 0b0_00000000_00000000000000001010000,
         };
         let expected = 80;
-        let actual = eighty.get_significand();
+        let actual = eighty.get_coefficient();
         assert_eq!(expected, actual);
 
         let first_24th_bit = d32 { bits: 0b0_11_00000000_000000000000000000000 };
         let expected = 8388608;
-        let actual = first_24th_bit.get_significand();
+        let actual = first_24th_bit.get_coefficient();
         assert_eq!(expected, actual);
 
         let max = d32 { bits: 0b0_11_00000000_110001001011001111111 };
         let expected = 9_999_999;
-        let actual = max.get_significand();
+        let actual = max.get_coefficient();
         assert_eq!(expected, actual);
     }
 
