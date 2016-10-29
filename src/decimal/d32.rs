@@ -649,7 +649,8 @@ mod tests {
     #[test]
     fn test_get_exponent() {
         let zero = d32 {
-            // 101 => 0b0110_0101
+            // 0+101 = 101 =>
+            //      0b01100101
             bits: 0b0_01100101_00000000000000000000000,
         };
         let expected = 0;
@@ -657,7 +658,8 @@ mod tests {
         assert_eq!(expected, actual);
 
         let one = d32 {
-            // 102 => 0b0110_0110
+            // 1+101 = 102 =>
+            //     0b_01100110
             bits: 0b0_01100110_00000000000000000000000,
         };
         let expected = 1;
@@ -665,7 +667,8 @@ mod tests {
         assert_eq!(expected, actual);
 
         let neg_one = d32 {
-            // 100 => 0b0110_0101
+            // -1+101 = 100
+            //   => 0b01100101
             bits: 0b0_01100100_00000000000000000000000,
         };
         let expected = -1;
@@ -673,7 +676,8 @@ mod tests {
         assert_eq!(expected, actual);
 
         let ninety = d32 {
-            // 100 => 0b0110_0101
+            // 90+101 = 191 =>
+            //      0b10111111
             bits: 0b0_10111111_00000000000000000000000,
         };
         let expected = 90;
@@ -681,19 +685,21 @@ mod tests {
         assert_eq!(expected, actual);
 
         let neg_101 = d32 {
-            // 0 => 0b0000_0000
+            // -101+101 = 0 =>
+            //      0b00000000
             bits: 0b0_00000000_00000000000000000000000,
         };
         let expected = -101;
         let actual = neg_101.get_exponent();
         assert_eq!(expected, actual);
 
-        let alternate = d32 {
-            // 64 => 0b0100_0000
+        let shifted_exponent = d32 {
+            // -37+101 = 64 =>
+            //         0b01000000
             bits: 0b0_11_01000000_000000000000000000000,
         };
         let expected = -37;
-        let actual = alternate.get_exponent();
+        let actual = shifted_exponent.get_exponent();
         assert_eq!(expected, actual);
     }
 
