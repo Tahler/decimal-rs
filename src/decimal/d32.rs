@@ -87,21 +87,22 @@ impl d32 {
             let sign_field = (if is_negative { 1 } else { 0 }) << 31;
             let biased_exponent = (exponent - MIN_EXPONENT) as u32;
 
-            let implicit_field;
+            let implicit_100_indicator_field;
             let exponent_field;
             let coefficient_field;
             if coefficient < 8_388_608 {
-                implicit_field = 0;
-                exponent_field = biased_exponent << 23; // TODO think
+                implicit_100_indicator_field = 0;
+                exponent_field = biased_exponent << 23;
                 coefficient_field = coefficient;
             } else {
                 // 8,388,608 is the first number that requires the implicit (100) in the coefficient
-                implicit_field = 0b11 << 29;
+                implicit_100_indicator_field = 0b11 << 29;
                 exponent_field = biased_exponent << 21;
-                // remove the implicit (100)
-                coefficient_field = coefficient - 0b1000_0000_0000_0000_0000_0000;
+                // remove the implicit 100 since it is not stored explicitly
+                let implicit_100 = 0b100_0_0000000000_0000000000;
+                coefficient_field = coefficient - implicit_100;
             }
-            d32 { bits: sign_field + implicit_field + exponent_field + coefficient_field }
+            d32 { bits: sign_field + implicit_100_indicator_field + exponent_field + coefficient_field }
         }
     }
 
