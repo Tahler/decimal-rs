@@ -1036,7 +1036,7 @@ mod tests {
     }
 
     #[test]
-    fn test_fmt() {
+    fn test_fmt_display() {
         let no_change = d32::from_data(false, 0, 1234567);
         let expected = "1234567".to_string();
         let actual = format!("{}", no_change);
