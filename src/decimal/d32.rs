@@ -715,10 +715,7 @@ mod tests {
         let actual = one.get_coefficient();
         assert_eq!(expected, actual);
 
-        let eighty = d32 {
-            // 80 => 0b0101_0000
-            bits: 0b0_00000000_00000000000000001010000,
-        };
+        let eighty = d32 { bits: 0b0_00000000_00000000000000001010000 };
         let expected = 80;
         let actual = eighty.get_coefficient();
         assert_eq!(expected, actual);
