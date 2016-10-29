@@ -642,6 +642,12 @@ impl fmt::UpperExp for d32 {
     }
 }
 
+impl fmt::Binary for d32 {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        self.bits.fmt(formatter)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1064,5 +1070,24 @@ mod tests {
         let expected = "0.0000001234".to_string();
         let actual = format!("{}", shift_right_ten);
         assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn test_fmt_binary() {
+        let bits = 0b0_0000000_00000000000000000000000;
+        let d32 = d32 { bits: bits };
+        assert_eq!(format!("{:b}", bits), format!("{:b}", d32));
+
+        let bits = 0b0_0000000_00000000000000000000001;
+        let d32 = d32 { bits: bits };
+        assert_eq!(format!("{:b}", bits), format!("{:b}", d32));
+
+        let bits = 0b0_00000000_00000000000000001010000;
+        let d32 = d32 { bits: bits };
+        assert_eq!(format!("{:b}", bits), format!("{:b}", d32));
+
+        let bits = 0b0_11_00000000_110001001011001111111;
+        let d32 = d32 { bits: bits };
+        assert_eq!(format!("{:b}", bits), format!("{:b}", d32));
     }
 }
