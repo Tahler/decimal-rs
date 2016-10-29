@@ -182,7 +182,7 @@ impl d32 {
     }
 
     fn get_sign_field(&self) -> u32 {
-        bit_ops::get_bits(self.bits, 31, 32)
+        bit_ops::get_bit(self.bits, 31)
     }
 
     fn get_combination_field(&self) -> u32 {
@@ -208,7 +208,7 @@ impl d32 {
     }
 
     fn get_normal_coefficient(&self) -> u32 {
-        bit_ops::get_bits(self.bits, 0, 21)
+        bit_ops::get_bits(self.bits, 0, 22)
     }
 
     fn get_shifted_coefficient(&self) -> u32 {
