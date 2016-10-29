@@ -20,7 +20,7 @@ const MAX_COEFFICIENT: u32 = 9999999;
 /// Represents a 32-bit decimal number according to the [IEEE 754-2008 standard]
 /// (https://en.wikipedia.org/wiki/Decimal32_floating-point_format).
 ///
-/// Decimal32 supports 7 decimal digits of coefficient and an exponent range of −95 to +96, i.e.
+/// Decimal32 supports 7 decimal digits of precision and an exponent range of −95 to +96, i.e.
 /// ±0.000000×10^−95 to ±9.999999×10^96. (Equivalently, ±0000000×10^−101 to ±9999999×10^90.)
 #[allow(non_camel_case_types)]
 #[derive(Clone, Copy)]
