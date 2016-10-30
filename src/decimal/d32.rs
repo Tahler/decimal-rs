@@ -62,7 +62,9 @@ impl d32 {
             let shifted_components = shift_exponent(coefficient, exponent, shift);
             match shifted_components {
                 // Retry with shifted exponent
-                Some((shifted_exponent, shifted_coefficient)) => d32::from_data(is_negative, shifted_exponent, shifted_coefficient),
+                Some((shifted_exponent, shifted_coefficient)) => {
+                    d32::from_data(is_negative, shifted_exponent, shifted_coefficient)
+                }
                 None => consts::ZERO,
             }
         } else if exponent > MAX_EXPONENT {
@@ -70,12 +72,16 @@ impl d32 {
             let shifted_components = shift_exponent(coefficient, exponent, shift);
             match shifted_components {
                 // Retry with shifted exponent
-                Some((shifted_exponent, shifted_coefficient)) => d32::from_data(is_negative, shifted_exponent, shifted_coefficient),
-                None => if is_negative {
+                Some((shifted_exponent, shifted_coefficient)) => {
+                    d32::from_data(is_negative, shifted_exponent, shifted_coefficient)
+                }
+                None => {
+                    if is_negative {
                     consts::NEG_INFINITY
                 } else {
                     consts::INFINITY
-                },
+            }
+                }
             }
         } else if coefficient > MAX_COEFFICIENT {
             if is_negative {
@@ -102,8 +108,11 @@ impl d32 {
                 let implicit_100 = 0b100_0_0000000000_0000000000;
                 coefficient_field = coefficient - implicit_100;
             }
-            d32 { bits: sign_field + implicit_100_indicator_field + exponent_field + coefficient_field }
+            d32 {
+                bits: sign_field + implicit_100_indicator_field + exponent_field +
+                      coefficient_field,
         }
+    }
     }
 
     /// Returns a d32 with the exact bits passed in through `data`.
@@ -292,17 +301,17 @@ impl cmp::PartialOrd for d32 {
             if other.is_zero() {
                 return Some(cmp::Ordering::Equal);
             } else if other.is_positive() {
-                return Some(cmp::Ordering::Less)
+                return Some(cmp::Ordering::Less);
             } else {
-                return Some(cmp::Ordering::Greater)
+                return Some(cmp::Ordering::Greater);
             }
         }
         if other.is_zero() {
             assert!(!self.is_zero());
             if self.is_positive() {
-                return Some(cmp::Ordering::Greater)
+                return Some(cmp::Ordering::Greater);
             } else {
-                return Some(cmp::Ordering::Less)
+                return Some(cmp::Ordering::Less);
             }
         }
         // Normal case
@@ -316,7 +325,7 @@ impl cmp::PartialOrd for d32 {
         // Infinity special cases
         if self.is_infinity() && other.is_infinity() {
             assert!(lhs_sign_field == rhs_sign_field);
-            return Some(cmp::Ordering::Equal)
+            return Some(cmp::Ordering::Equal);
         }
         let diff = (*self) - (*other);
         if diff.is_zero() {
@@ -1015,7 +1024,8 @@ mod tests {
         let three_hundred_twenty_four = d32::from_data(false, 0, 324);
         assert_eq!(three_hundred_twenty_four, eighteen * eighteen);
         assert_eq!(three_hundred_twenty_four, one * eighteen * eighteen);
-        assert_eq!(three_hundred_twenty_four, one * eighteen * one * eighteen * one);
+        assert_eq!(three_hundred_twenty_four,
+                   one * eighteen * one * eighteen * one);
         assert_eq!(zero, one * eighteen * eighteen * zero);
 
         let pos_infinity = consts::INFINITY;
