@@ -5,11 +5,12 @@ use std::fmt;
 use num;
 use num::{Num, Zero, One, Signed};
 
+use num_ops;
 use bit_ops;
 
 use super::parse_decimal_error::ParseDecimalError;
 
-const NUM_DIGITS: u32 = 7;
+const NUM_SIGNIFICANT_DIGITS: u32 = 7;
 
 const MIN_EXPONENT: i32 = -101;
 const MAX_EXPONENT: i32 = 90;
@@ -77,10 +78,10 @@ impl d32 {
                 }
                 None => {
                     if is_negative {
-                    consts::NEG_INFINITY
-                } else {
-                    consts::INFINITY
-            }
+                        consts::NEG_INFINITY
+                    } else {
+                        consts::INFINITY
+                    }
                 }
             }
         } else if coefficient > MAX_COEFFICIENT {
@@ -111,8 +112,8 @@ impl d32 {
             d32 {
                 bits: sign_field + implicit_100_indicator_field + exponent_field +
                       coefficient_field,
+            }
         }
-    }
     }
 
     /// Returns a d32 with the exact bits passed in through `data`.
@@ -497,7 +498,82 @@ impl ops::Div<d32> for d32 {
     type Output = d32;
 
     fn div(self, other: d32) -> d32 {
-        self // TODO
+        let dividend = self;
+        let divisor = other;
+
+        if dividend.is_nan() || divisor.is_nan() {
+            consts::NAN
+        } else if divisor.is_zero() {
+            // Choosing to return NaN as opposed to Infinity
+            consts::NAN
+        } else if dividend.is_zero() {
+            consts::ZERO
+        } else if dividend.is_infinity() {
+            if divisor.is_infinity() {
+                // infinity / infinity = undefined
+                consts::NAN
+            } else {
+                // infinity / +anything = +infinity
+                // infinity / -anything = -infinity
+                let sign_field = dividend.get_sign_field() ^ divisor.get_sign_field();
+                let is_negative = sign_field == 1;
+                if is_negative {
+                    consts::NEG_INFINITY
+                } else {
+                    consts::INFINITY
+                }
+            }
+        } else if divisor.is_infinity() {
+            // assert!(!dividend.is_nan() && !dividend.is_infinity());
+            // anything / infinity = 0
+            consts::ZERO
+        } else {
+            // Long division
+            use num_ops::num_decimal_digits;
+
+            let mut adjust = 0;
+            let mut dividend_coefficient = dividend.get_coefficient();
+            let mut divisor_coefficient = divisor.get_coefficient();
+            // Adjust the coefficients such that the dividend's coefficient is greater than or equal to the divisor's coefficient
+            // TODO: could this be optimized to take one calculation?
+            while dividend_coefficient < divisor_coefficient {
+                dividend_coefficient *= 10;
+                adjust += 1;
+            }
+            while divisor_coefficient >= (divisor_coefficient * 10) {
+                divisor_coefficient *= 10;
+                adjust -= 1;
+            }
+
+            let mut result_coefficient: u32 = 0;
+            let mut division_complete = false;
+            while !division_complete {
+                while divisor_coefficient <= dividend_coefficient {
+                    dividend_coefficient -= divisor_coefficient;
+                    result_coefficient += 1;
+                }
+                if (dividend_coefficient == 0 && adjust >= 0) ||
+                    // TODO: benchmark the difference between calculating digits vs. between 1000000 and 9999999
+                   (num_decimal_digits(result_coefficient as i32) == NUM_SIGNIFICANT_DIGITS) {
+                    division_complete = true;
+                } else {
+                    result_coefficient *= 10;
+                    dividend_coefficient *= 10;
+                    adjust += 1;
+                }
+            }
+
+            let result_exponent = dividend.get_exponent() - divisor.get_exponent() - adjust;
+            let result_sign_field = dividend.get_sign_field() ^ divisor.get_sign_field();
+            let result_is_negative = result_sign_field == 1;
+
+            let remainder: f32 = (dividend_coefficient as f32) / (divisor_coefficient as f32);
+            let signed_remainder = remainder * (if result_is_negative { -1.0 } else { 1.0 });
+            let rounded_coefficient = num_ops::round_away(result_coefficient, signed_remainder);
+
+            let rounded = d32::from_data(result_is_negative, result_exponent, rounded_coefficient);
+            rounded
+        }
     }
 }
 
@@ -1043,6 +1119,56 @@ mod tests {
         assert!((nan * one).is_nan());
         assert!((nan * -four).is_nan());
         assert!((nan * nan).is_nan());
+    }
+
+    #[test]
+    fn test_div() {
+        use num::Zero;
+
+        let zero = consts::ZERO;
+        let one = consts::ONE;
+        assert_eq!(zero, zero / one);
+        assert_eq!(one, one / one);
+
+        let two = d32::from_data(false, 0, 2);
+        let four = d32::from_data(false, 0, 4);
+        assert_eq!(two, four / two);
+
+        let one_half = d32::from_data(false, -1, 05);
+        assert_eq!(one_half, two / four);
+
+        let three = d32::from_data(false, 0, 3);
+        let one_third = d32::from_data(false, -7, 3333333);
+        assert_eq!(one_third, one / three);
+
+        let two_thirds_rounded = d32::from_data(false, -7, 6666667);
+        assert_eq!(two_thirds_rounded, two / three);
+
+        let thirteen = d32::from_data(false, 0, 13);
+        assert_eq!(thirteen, thirteen / one);
+
+        let one_hundred_two = d32::from_data(false, 0, 102);
+        let expected = d32::from_data(false, -7, 1274510);
+        assert_eq!(expected, thirteen / one_hundred_two);
+
+        let pos_infinity = consts::INFINITY;
+        let neg_infinity = consts::NEG_INFINITY;
+        assert_eq!(zero, two / pos_infinity);
+        assert_eq!(zero, two / neg_infinity);
+        assert_eq!(neg_infinity, neg_infinity / two);
+        assert_eq!(pos_infinity, neg_infinity / -two);
+        assert_eq!(pos_infinity, pos_infinity / two);
+        assert_eq!(neg_infinity, pos_infinity / -one);
+        assert!((pos_infinity / neg_infinity).is_nan());
+        assert!((neg_infinity / neg_infinity).is_nan());
+        assert!((pos_infinity / zero).is_nan());
+        assert!((zero / neg_infinity).is_zero());
+
+        let nan = consts::NAN;
+        assert!((nan / zero).is_nan());
+        assert!((one / nan).is_nan());
+        assert!((nan / -thirteen).is_nan());
+        assert!((nan / nan).is_nan());
     }
 
     #[test]

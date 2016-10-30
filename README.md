@@ -2,7 +2,7 @@
 
 An implementation of the IEEE 754-2008 standard for decimal floating point numbers.
 
-## Research
+## Research and Influence
 
 - https://en.wikipedia.org/wiki/Decimal_floating_point
 - http://speleotrove.com/decimal/decbits.pdf
@@ -12,8 +12,7 @@ An implementation of the IEEE 754-2008 standard for decimal floating point numbe
 
 If you're looking to help, there are plenty of small pieces that can be worked on. Below is a list:
 
-- Multiplication / Division
-  - With floats as well as other decimals
+- Different rounding modes
 - Display with alternate formatting
 - Remainder
 - FromStrRadix
